@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Profile | BAMatlas{% endblock %}
+
+{% block content %}
+  <section class="panel profile-panel">
+    <p class="eyebrow">Profile editor</p>
+    <h1>Shape how colleagues discover your expertise.</h1>
+    <p class="lead compact">
+      Public data stays focused on discovery. Account details and email verification remain in the private account area.
+    </p>
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+      {% for field in form %}
+        <div class="field{% if field.name == 'research_summary' %} field-wide{% endif %}{% if field.name == 'expertise_terms' %} autocomplete-field{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.name == "expertise_terms" %}
+            <div class="selected-hint">Example: `X-ray diffraction, residual stress analysis, corrosion`</div>
+          {% endif %}
+          {% if field.help_text %}
+            <p class="help-text">{{ field.help_text }}</p>
+          {% endif %}
+          {% if field.errors %}
+            <div class="field-errors">{{ field.errors }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="hero-actions">
+        <button type="submit" class="button button-primary">Save profile</button>
+        {% if profile.is_public %}
+          <a class="button button-secondary" href="{% url 'directory:profile-detail' profile.public_id %}">View public profile</a>
+        {% else %}
+          <a class="button button-secondary" href="{% url 'accounts:account-home' %}">Back to my account</a>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/expertise-picker.js' %}"></script>
+{% endblock %}

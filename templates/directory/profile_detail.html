@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile.full_name }} | BAMatlas{% endblock %}
+
+{% block content %}
+  <section class="panel public-profile-panel">
+    <p class="eyebrow">{{ profile.organizational_entity }}</p>
+    <h1>{{ profile.full_name }}</h1>
+    <p class="lead compact"><a class="profile-email-link" href="mailto:{{ profile.user.email }}">{{ profile.user.email }}</a></p>
+    {% if profile.job_title %}
+      <p class="lead compact">{{ profile.job_title }}</p>
+    {% endif %}
+    <div class="status-grid">
+      {% if profile.location %}
+        <article class="status-card">
+          <h2>Location</h2>
+          <p>{{ profile.get_location_display }}</p>
+        </article>
+      {% endif %}
+      <article class="status-card">
+        <h2>Expertise terms</h2>
+        <p>{{ profile.expertise_terms.count }}</p>
+      </article>
+      <article class="status-card">
+        <h2>Directory visibility</h2>
+        <p>Public</p>
+      </article>
+    </div>
+    {% if profile.research_summary %}
+      <div class="profile-body">
+        <h2>Research summary</h2>
+        <p>{{ profile.research_summary|linebreaksbr }}</p>
+      </div>
+    {% endif %}
+    <div class="profile-body">
+      <h2>Expertise</h2>
+      <div class="tag-row">
+        {% for term in profile.expertise_terms.all %}
+          <a class="chip chip-small" href="{% url 'directory:list' %}?expertise={{ term.name|urlencode }}">{{ term.name }}</a>
+        {% empty %}
+          <p class="inline-note">No expertise terms listed yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+    {% if request.user == profile.user %}
+      <div class="hero-actions">
+        <a class="button button-secondary" href="{% url 'directory:profile-edit' %}">Edit my profile</a>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

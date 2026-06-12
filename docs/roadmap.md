@@ -40,6 +40,8 @@ Includes:
 - expertise term model
 - searchable directory
 - autocomplete and clickable filters
+- self-service profile editor
+- public profile detail pages
 
 ## Milestone 4: Admin Hardening
 
