@@ -26,6 +26,7 @@ pythonpath = ["."]
 testpaths = ["tests"]
 
 [tool.ruff]
+exclude = ["*/migrations/*.py"]
 line-length = 100
 target-version = "py312"
 

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Email Verification | BAMatlas{% endblock %}
+
+{% block content %}
+  <section class="panel auth-panel">
+    {% if verification_state == "approved" %}
+      <p class="eyebrow">Email verified</p>
+      <h1>Your account is ready.</h1>
+      <p class="lead compact">Your email address has been verified successfully. You can now sign in.</p>
+      <a class="button button-primary" href="{% url 'accounts:login' %}">Sign in</a>
+    {% elif verification_state == "pending-approval" %}
+      <p class="eyebrow">Email verified</p>
+      <h1>Your account is waiting for approval.</h1>
+      <p class="lead compact">
+        Your email has been verified. An administrator still needs to approve your first activation before you can sign in.
+      </p>
+      <a class="button button-secondary" href="{% url 'accounts:registration-pending' %}">Back to verification help</a>
+    {% else %}
+      <p class="eyebrow">Verification failed</p>
+      <h1>This verification link is not valid anymore.</h1>
+      <p class="lead compact">
+        The link may be expired or already replaced. Request a fresh verification email and try again.
+      </p>
+      <a class="button button-secondary" href="{% url 'accounts:registration-pending' %}">Request another email</a>
+    {% endif %}
+  </section>
+{% endblock %}

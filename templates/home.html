@@ -4,24 +4,29 @@
 
 {% block content %}
   <section class="hero">
-    <p class="eyebrow">Milestone 1</p>
-    <h1>Expertise discovery for BAM, built for a clean and secure start.</h1>
+    <p class="eyebrow">Milestone 2</p>
+    <h1>Secure registration now, institutional expertise discovery next.</h1>
     <p class="lead">
-      This first milestone establishes the Django foundation, custom account model,
-      and environment-aware settings that later features will build on.
+      BAMatlas now supports local account creation with institutional email restrictions,
+      email verification, and moderation-aware sign in. The next milestone turns these
+      accounts into a searchable public expertise directory.
     </p>
+    <div class="hero-actions">
+      <a class="button button-primary" href="{% url 'accounts:register' %}">Create an account</a>
+      <a class="button button-secondary" href="{% url 'accounts:login' %}">Sign in</a>
+    </div>
     <div class="card-grid">
       <article class="card">
-        <h2>Secure by default</h2>
-        <p>Argon2 password hashing, production-only security flags, and a custom user model from day one.</p>
+        <h2>Institutional guardrails</h2>
+        <p>Registration is limited to approved BAM email domains so we can keep the directory intentionally internal.</p>
       </article>
       <article class="card">
-        <h2>Search-ready</h2>
-        <p>The next milestones add structured expertise terms, autocomplete, and a public people directory.</p>
+        <h2>Verified before access</h2>
+        <p>New accounts must verify their email, and can also wait for an administrator approval step when required.</p>
       </article>
       <article class="card">
-        <h2>SSO later</h2>
-        <p>Local accounts keep the project moving now while leaving a clear migration path to institutional SSO.</p>
+        <h2>Ready for SSO later</h2>
+        <p>The authentication flow is intentionally simple now while preserving a clean migration path to BAM single sign-on later.</p>
       </article>
     </div>
   </section>

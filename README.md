@@ -12,13 +12,21 @@ BAMatlas is a staff directory for BAM expertise discovery. It is being built as 
 
 ## Current Milestone
 
-This branch implements the project foundation:
+The foundation branch implements:
 
 - Django 5.2 LTS scaffold
 - custom user model from day one
 - environment-aware settings
 - secure production defaults
 - local development instructions
+
+The current authentication milestone adds:
+
+- `@bam.de` account registration
+- email verification
+- moderation-ready activation
+- sign in and sign out flows
+- a basic authenticated account page
 
 ## Planned Milestones
 
@@ -41,7 +49,6 @@ The project uses `uv` for dependency management.
 2. Create the database and initial migration state:
 
    ```bash
-   uv run python manage.py makemigrations
    uv run python manage.py migrate
    ```
 
@@ -59,7 +66,13 @@ The project uses `uv` for dependency management.
 
 5. Open `http://127.0.0.1:8000/`
 
-For local development, email is sent to the console so verification links can be tested without external infrastructure.
+For local development, email is sent to the console so verification links can be tested without external infrastructure. During milestone 2, the intended local flow is:
+
+1. create an account with a `@bam.de` email address
+2. copy the verification link from the terminal output
+3. open the link in the browser
+4. if admin approval is still required, approve the user through `/admin/`
+5. sign in through the public login page
 
 ## Architecture Notes
 

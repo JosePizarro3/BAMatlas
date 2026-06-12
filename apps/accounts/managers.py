@@ -1,4 +1,5 @@
 from django.contrib.auth.base_user import BaseUserManager
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -22,11 +23,14 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(self, email: str, password: str, **extra_fields):
+        now = timezone.now()
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("is_approved", True)
         extra_fields.setdefault("is_email_verified", True)
+        extra_fields.setdefault("approved_at", now)
+        extra_fields.setdefault("email_verified_at", now)
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
