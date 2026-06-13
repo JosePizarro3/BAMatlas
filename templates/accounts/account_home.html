@@ -21,7 +21,13 @@
       </article>
     </div>
     <p class="lead compact">
-      The directory profile and expertise metadata arrive in the next milestone. This page is the authenticated landing point for confirmed accounts.
+      Your account is active. Keep your public directory profile current so colleagues can discover your expertise.
     </p>
+    <div class="hero-actions">
+      <a class="button button-primary" href="{% url 'directory:profile-edit' %}">Edit public profile</a>
+      {% if profile.is_public %}
+        <a class="button button-secondary" href="{% url 'directory:profile-detail' profile.public_id %}">View public profile</a>
+      {% endif %}
+    </div>
   </section>
 {% endblock %}

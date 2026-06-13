@@ -28,6 +28,15 @@ The current authentication milestone adds:
 - sign in and sign out flows
 - a basic authenticated account page
 
+The current directory milestone adds:
+
+- public profiles with structured expertise terms
+- landing-page search and clickable expertise filters
+- expertise autocomplete for search and profile editing
+- a self-service profile editor for registered users
+- public profile email addresses for direct contact
+- controlled site locations limited to `UE`, `AH`, or `TTS`
+
 ## Planned Milestones
 
 1. `milestone/01-foundation`: scaffold, settings, custom user model, local setup.
@@ -73,6 +82,8 @@ For local development, email is sent to the console so verification links can be
 3. open the link in the browser
 4. if admin approval is still required, approve the user through `/admin/`
 5. sign in through the public login page
+6. complete the profile at `/directory/profile/edit/`
+7. explore the public directory at `/directory/`
 
 ## Architecture Notes
 

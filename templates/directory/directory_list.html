@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Directory | BAMatlas{% endblock %}
+
+{% block content %}
+  <section class="hero compact-hero">
+    <p class="eyebrow">Directory</p>
+    <h1>Search public BAM expertise.</h1>
+    <p class="lead compact">
+      Filter by expertise, organisation, or free text. Click a term to narrow results quickly.
+    </p>
+    <form method="get" class="search-shell">
+      <div class="search-grid search-grid-wide">
+        <div class="field">
+          <label for="directory-query">Search people or topics</label>
+          <input id="directory-query" name="q" type="text" value="{{ search_query }}" placeholder="Diffraction, fatigue, Schmidt">
+        </div>
+        <div class="field autocomplete-field">
+          <label for="directory-expertise">Expertise</label>
+          <input
+            id="directory-expertise"
+            name="expertise"
+            type="text"
+            value="{{ search_expertise }}"
+            placeholder="X-ray diffraction"
+            data-expertise-suggestions="single"
+            data-autocomplete-url="{% url 'directory:expertise-suggest' %}"
+          >
+        </div>
+        <div class="field">
+          <label for="directory-organization">Organisation</label>
+          <input id="directory-organization" name="organization" type="text" value="{{ search_organization }}" placeholder="Division 6.1">
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button type="submit" class="button button-primary">Apply filters</button>
+        <a class="button button-secondary" href="{% url 'directory:list' %}">Clear</a>
+      </div>
+    </form>
+    {% if featured_terms %}
+      <div class="chip-group">
+        {% for term in featured_terms %}
+          <a class="chip{% if search_expertise and search_expertise|lower == term.name|lower %} chip-active{% endif %}" href="{% url 'directory:list' %}?expertise={{ term.name|urlencode }}">
+            {{ term.name }} <span>{{ term.public_profile_count }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="results-shell">
+    <div class="results-header">
+      <h2>{{ result_count }} result{{ result_count|pluralize }}</h2>
+      {% if request.user.is_authenticated %}
+        <a class="button button-secondary" href="{% url 'directory:profile-edit' %}">Edit my profile</a>
+      {% endif %}
+    </div>
+    {% if profiles %}
+      <div class="profile-grid">
+        {% for profile in profiles %}
+          <article class="profile-card">
+            <p class="profile-kicker">{{ profile.organizational_entity }}</p>
+            <h3><a href="{{ profile.get_absolute_url }}">{{ profile.full_name }}</a></h3>
+            <p class="profile-email"><a href="mailto:{{ profile.user.email }}">{{ profile.user.email }}</a></p>
+            {% if profile.job_title %}
+              <p class="profile-role">{{ profile.job_title }}</p>
+            {% endif %}
+            {% if profile.location %}
+              <p class="profile-location">{{ profile.get_location_display }}</p>
+            {% endif %}
+            {% if profile.research_summary %}
+              <p class="profile-summary">{{ profile.research_summary|truncatechars:220 }}</p>
+            {% endif %}
+            <div class="tag-row">
+              {% for term in profile.expertise_terms.all %}
+                <a class="chip chip-small" href="{% url 'directory:list' %}?expertise={{ term.name|urlencode }}">{{ term.name }}</a>
+              {% empty %}
+                <span class="inline-note">No expertise terms yet.</span>
+              {% endfor %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+      {% if is_paginated %}
+        <nav class="pagination" aria-label="Directory pages">
+          {% if page_obj.has_previous %}
+            <a class="button button-secondary" href="?page={{ page_obj.previous_page_number }}&q={{ search_query|urlencode }}&expertise={{ search_expertise|urlencode }}&organization={{ search_organization|urlencode }}">Previous</a>
+          {% endif %}
+          <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+            <a class="button button-secondary" href="?page={{ page_obj.next_page_number }}&q={{ search_query|urlencode }}&expertise={{ search_expertise|urlencode }}&organization={{ search_organization|urlencode }}">Next</a>
+          {% endif %}
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        <h2>No public profiles matched those filters.</h2>
+        <p>Try a broader search, remove one filter, or pick one of the suggested expertise terms above.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/expertise-picker.js' %}"></script>
+{% endblock %}

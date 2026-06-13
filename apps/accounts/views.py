@@ -112,3 +112,11 @@ class VerifyEmailView(TemplateView):
 
 class AccountHomeView(LoginRequiredMixin, TemplateView):
     template_name = "accounts/account_home.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.directory.models import Profile
+
+        profile, _ = Profile.objects.get_or_create(user=self.request.user)
+        context["profile"] = profile
+        return context

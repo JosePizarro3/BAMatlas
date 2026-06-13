@@ -24,10 +24,24 @@ The first release needs strong security defaults without introducing operational
 The application will separate account data from public profile data:
 
 - `accounts.User`: authentication, verification, moderation, staff rights
-- future `directory.Profile`: public person metadata
-- future `directory.ExpertiseTerm`: structured expertise vocabulary
+- `directory.Profile`: public person metadata
+- `directory.ExpertiseTerm`: structured expertise vocabulary
 
 That separation keeps private/security-sensitive concerns isolated from public directory data.
+
+## Directory Design
+
+The directory layer uses:
+
+- `Profile`: one public-facing record per user
+- `ExpertiseTerm`: reusable expertise vocabulary entries
+- `ProfileExpertise`: explicit join table for profile-term relationships
+
+Public profile data now includes the institutional email address, because discoverability is only useful if colleagues can contact each other immediately from the directory.
+
+`Profile.location` is intentionally constrained to the BAM site codes `UE`, `AH`, and `TTS` to avoid drifting free-text variants.
+
+Users can select existing expertise terms or type a new one. New terms are created immediately, but stored in a structured table so autocomplete and later governance remain possible.
 
 ## Elasticsearch Strategy
 
