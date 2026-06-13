@@ -19,13 +19,22 @@
         <h2>Admin approved</h2>
         <p>{{ request.user.is_approved|yesno:"Yes,No" }}</p>
       </article>
+      <article class="status-card">
+        <h2>Profile status</h2>
+        <p>{{ profile.get_moderation_status_display }}</p>
+      </article>
     </div>
     <p class="lead compact">
       Your account is active. Keep your public directory profile current so colleagues can discover your expertise.
     </p>
+    {% if profile.moderation_notes %}
+      <div class="message">
+        <strong>Admin notes:</strong> {{ profile.moderation_notes }}
+      </div>
+    {% endif %}
     <div class="hero-actions">
       <a class="button button-primary" href="{% url 'directory:profile-edit' %}">Edit public profile</a>
-      {% if profile.is_public %}
+      {% if profile.is_listed_publicly %}
         <a class="button button-secondary" href="{% url 'directory:profile-detail' profile.public_id %}">View public profile</a>
       {% endif %}
     </div>

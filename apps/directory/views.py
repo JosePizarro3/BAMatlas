@@ -1,16 +1,19 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
-from django.views.generic import DetailView, ListView, UpdateView
+from django.views.generic import DetailView, ListView, TemplateView, UpdateView
 
 from .forms import ProfileForm
-from .models import ExpertiseTerm, Profile
+from .models import AuditEvent, ExpertiseTerm, Profile
 from .services import (
+    FEATURED_EXPERTISE_LIMIT,
     filter_public_profiles,
     get_featured_expertise_terms,
     get_public_profile_queryset,
+    record_audit_event,
 )
 
 
@@ -29,7 +32,9 @@ class DirectoryListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["featured_terms"] = get_featured_expertise_terms(limit=12)
+        context["featured_terms"] = get_featured_expertise_terms(
+            limit=FEATURED_EXPERTISE_LIMIT
+        )
         context["search_query"] = self.request.GET.get("q", "").strip()
         context["search_expertise"] = self.request.GET.get("expertise", "").strip()
         context["search_organization"] = self.request.GET.get("organization", "").strip()
@@ -63,11 +68,36 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
-        messages.success(self.request, "Your public profile has been updated.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        profile = self.object
+        if (
+            profile.moderation_status == Profile.ModerationStatus.PUBLISHED
+            and profile.has_pending_updates
+        ):
+            messages.success(
+                self.request,
+                (
+                    "Your profile changes were saved and flagged for admin review "
+                    "while remaining public."
+                ),
+            )
+        elif profile.moderation_status == Profile.ModerationStatus.PENDING_REVIEW:
+            messages.success(
+                self.request,
+                "Your profile has been submitted for admin review before public listing.",
+            )
+        else:
+            messages.success(self.request, "Your public profile has been updated.")
+        record_audit_event(
+            actor=self.request.user,
+            target_user=self.request.user,
+            profile=profile,
+            action=AuditEvent.Action.PROFILE_SUBMITTED,
+        )
+        return response
 
     def get_success_url(self):
-        if self.object.is_public:
+        if self.object.is_listed_publicly:
             return self.object.get_absolute_url()
         return reverse("accounts:account-home")
 
@@ -80,3 +110,108 @@ class ExpertiseSuggestionView(View):
             queryset = queryset.filter(name__icontains=query)
         suggestions = list(queryset.order_by("name").values_list("name", flat=True)[:8])
         return JsonResponse({"results": suggestions})
+
+
+class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    raise_exception = True
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+
+class ModerationDashboardView(StaffRequiredMixin, TemplateView):
+    template_name = "directory/moderation_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.accounts.models import User
+
+        context["pending_users"] = User.objects.filter(
+            is_active=True,
+            is_email_verified=True,
+            is_approved=False,
+        ).order_by("created_at")
+        context["pending_profiles"] = Profile.objects.select_related("user").filter(
+            moderation_status=Profile.ModerationStatus.PENDING_REVIEW
+        ).order_by("submitted_for_review_at", "updated_at")
+        context["profiles_with_pending_updates"] = Profile.objects.select_related("user").filter(
+            moderation_status=Profile.ModerationStatus.PUBLISHED,
+            has_pending_updates=True,
+        ).order_by("submitted_for_review_at", "updated_at")
+        context["recent_events"] = AuditEvent.objects.select_related(
+            "actor", "target_user", "profile"
+        )[:20]
+        return context
+
+    def post(self, request, *args, **kwargs):
+        from apps.accounts.models import User
+
+        action = request.POST.get("action")
+        notes = request.POST.get("notes", "").strip()
+
+        if action == "approve-user":
+            user = User.objects.get(pk=request.POST["user_id"])
+            user.mark_approved()
+            record_audit_event(
+                actor=request.user,
+                target_user=user,
+                action=AuditEvent.Action.USER_APPROVED,
+                notes=notes,
+            )
+            messages.success(request, f"Approved {user.email}.")
+        elif action == "deactivate-user":
+            user = User.objects.get(pk=request.POST["user_id"])
+            if user != request.user:
+                user.deactivate(by_user=request.user)
+                record_audit_event(
+                    actor=request.user,
+                    target_user=user,
+                    action=AuditEvent.Action.USER_DEACTIVATED,
+                    notes=notes,
+                )
+                messages.success(request, f"Deactivated {user.email}.")
+        elif action == "reactivate-user":
+            user = User.objects.get(pk=request.POST["user_id"])
+            user.reactivate()
+            record_audit_event(
+                actor=request.user,
+                target_user=user,
+                action=AuditEvent.Action.USER_REACTIVATED,
+                notes=notes,
+            )
+            messages.success(request, f"Reactivated {user.email}.")
+        elif action == "publish-profile":
+            profile = Profile.objects.get(pk=request.POST["profile_id"])
+            profile.publish(reviewed_by=request.user, notes=notes)
+            record_audit_event(
+                actor=request.user,
+                target_user=profile.user,
+                profile=profile,
+                action=AuditEvent.Action.PROFILE_PUBLISHED,
+                notes=notes,
+            )
+            messages.success(request, f"Published {profile.full_name}.")
+        elif action == "request-profile-changes":
+            profile = Profile.objects.get(pk=request.POST["profile_id"])
+            profile.request_changes(reviewed_by=request.user, notes=notes)
+            record_audit_event(
+                actor=request.user,
+                target_user=profile.user,
+                profile=profile,
+                action=AuditEvent.Action.PROFILE_CHANGES_REQUESTED,
+                notes=notes,
+            )
+            messages.success(request, f"Requested changes from {profile.full_name}.")
+        elif action == "archive-profile":
+            profile = Profile.objects.get(pk=request.POST["profile_id"])
+            profile.archive(reviewed_by=request.user, notes=notes)
+            record_audit_event(
+                actor=request.user,
+                target_user=profile.user,
+                profile=profile,
+                action=AuditEvent.Action.PROFILE_ARCHIVED,
+                notes=notes,
+            )
+            messages.success(request, f"Archived {profile.full_name}.")
+
+        return redirect("directory:moderation-dashboard")

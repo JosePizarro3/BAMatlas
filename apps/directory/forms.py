@@ -122,4 +122,11 @@ class ProfileForm(forms.ModelForm):
                 self.cleaned_data["expertise_terms"],
                 created_by=self.user,
             )
+            if self.user.is_staff:
+                profile.publish(
+                    reviewed_by=self.user,
+                    notes="Auto-published by staff profile edit.",
+                )
+            else:
+                profile.submit_for_review()
         return profile

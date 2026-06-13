@@ -52,6 +52,17 @@ class EmailAuthenticationForm(AuthenticationForm):
         "inactive": "This account has been disabled. Contact an administrator for help.",
     }
 
+    def clean(self):
+        try:
+            return super().clean()
+        except ValidationError as exc:
+            email = self.cleaned_data.get("username", "").strip().lower()
+            user = User.objects.filter(email__iexact=email, is_active=False).first()
+            password = self.cleaned_data.get("password")
+            if user is not None and password and user.check_password(password):
+                raise ValidationError(self.error_messages["inactive"], code="inactive") from exc
+            raise exc
+
     def confirm_login_allowed(self, user):
         if not user.is_active:
             raise ValidationError(self.error_messages["inactive"], code="inactive")

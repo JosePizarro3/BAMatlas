@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -15,6 +16,14 @@ class User(AbstractUser):
         help_text="Admins can use this to moderate first-time account activation.",
     )
     approved_at = models.DateTimeField(blank=True, null=True)
+    deactivated_at = models.DateTimeField(blank=True, null=True)
+    deactivated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="deactivated_users",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -39,3 +48,23 @@ class User(AbstractUser):
             self.approved_at = timezone.now()
             if save:
                 self.save(update_fields=["is_approved", "approved_at", "updated_at"])
+
+    def deactivate(self, *, by_user=None, save: bool = True) -> None:
+        if self.is_active:
+            self.is_active = False
+            self.deactivated_at = timezone.now()
+            self.deactivated_by = by_user
+            if save:
+                self.save(
+                    update_fields=["is_active", "deactivated_at", "deactivated_by", "updated_at"]
+                )
+
+    def reactivate(self, *, save: bool = True) -> None:
+        if not self.is_active:
+            self.is_active = True
+            self.deactivated_at = None
+            self.deactivated_by = None
+            if save:
+                self.save(
+                    update_fields=["is_active", "deactivated_at", "deactivated_by", "updated_at"]
+                )
