@@ -1,0 +1,55 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff check
+        entry: .venv/bin/ruff check
+        language: system
+        types_or: [python, pyi]
+        args: [--no-cache]
+        exclude: ^apps/.*/migrations/.*\.py$
+
+      - id: ruff-format
+        name: Ruff format check
+        entry: .venv/bin/ruff format --check
+        language: system
+        types_or: [python, pyi]
+        args: [--no-cache]
+        exclude: ^apps/.*/migrations/.*\.py$
+
+      - id: detect-secrets
+        name: Detect secrets
+        entry: .venv/bin/detect-secrets-hook --baseline .secrets.baseline
+        language: system
+        pass_filenames: true
+        exclude: ^(\.secrets\.baseline|uv\.lock)$
+
+      - id: check-yaml
+        name: Check YAML
+        entry: .venv/bin/python tools/precommit/run.py yaml
+        language: system
+        types_or: [yaml]
+
+      - id: check-toml
+        name: Check TOML
+        entry: .venv/bin/python tools/precommit/run.py toml
+        language: system
+        types: [toml]
+
+      - id: end-of-file-fixer
+        name: Check end of file newline
+        entry: .venv/bin/python tools/precommit/run.py eof
+        language: system
+        types: [text]
+
+      - id: trailing-whitespace
+        name: Check trailing whitespace
+        entry: .venv/bin/python tools/precommit/run.py trailing-whitespace
+        language: system
+        types: [text]
+
+      - id: check-merge-conflict
+        name: Check merge conflict markers
+        entry: .venv/bin/python tools/precommit/run.py merge-conflict
+        language: system
+        types: [text]

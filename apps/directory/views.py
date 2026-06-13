@@ -33,9 +33,7 @@ class DirectoryListView(ListView):
         selected_expertise_terms = parse_expertise_names(
             self.request.GET.get("expertise", "").strip()
         )
-        context["featured_terms"] = get_featured_expertise_terms(
-            limit=FEATURED_EXPERTISE_LIMIT
-        )
+        context["featured_terms"] = get_featured_expertise_terms(limit=FEATURED_EXPERTISE_LIMIT)
         context["search_expertise"] = format_expertise_names(selected_expertise_terms)
         context["result_count"] = self.get_queryset().count()
         return context
@@ -130,13 +128,19 @@ class ModerationDashboardView(StaffRequiredMixin, TemplateView):
             is_email_verified=True,
             is_approved=False,
         ).order_by("created_at")
-        context["pending_profiles"] = Profile.objects.select_related("user").filter(
-            moderation_status=Profile.ModerationStatus.PENDING_REVIEW
-        ).order_by("submitted_for_review_at", "updated_at")
-        context["profiles_with_pending_updates"] = Profile.objects.select_related("user").filter(
-            moderation_status=Profile.ModerationStatus.PUBLISHED,
-            has_pending_updates=True,
-        ).order_by("submitted_for_review_at", "updated_at")
+        context["pending_profiles"] = (
+            Profile.objects.select_related("user")
+            .filter(moderation_status=Profile.ModerationStatus.PENDING_REVIEW)
+            .order_by("submitted_for_review_at", "updated_at")
+        )
+        context["profiles_with_pending_updates"] = (
+            Profile.objects.select_related("user")
+            .filter(
+                moderation_status=Profile.ModerationStatus.PUBLISHED,
+                has_pending_updates=True,
+            )
+            .order_by("submitted_for_review_at", "updated_at")
+        )
         context["recent_events"] = AuditEvent.objects.select_related(
             "actor", "target_user", "profile"
         )[:20]

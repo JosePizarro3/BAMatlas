@@ -85,6 +85,44 @@ The `web` container runs migrations and `collectstatic` on startup.
 
 With the `uv` workflow, verification emails are printed to the console.
 
+## Testing And Quality Checks
+
+Install the development dependencies first:
+
+```bash
+uv sync --dev
+```
+
+Run the full test suite:
+
+```bash
+uv run pytest
+```
+
+Run the test suite with coverage:
+
+```bash
+uv run pytest --cov=apps.accounts --cov=apps.core --cov=apps.directory --cov=config --cov-report=term-missing
+```
+
+Run Ruff:
+
+```bash
+uv run ruff check .
+```
+
+Run Django system checks:
+
+```bash
+uv run python manage.py check
+```
+
+Run the pre-commit checks across the repository:
+
+```bash
+uv run pre-commit run --all-files
+```
+
 ## Deployment
 
-See [docs/deployment.md](/home/jpizarro/work/BAMatlas/docs/deployment.md) for Docker deployment, production configuration, and capacity guidance.
+See [docs/deployment.md](docs/deployment.md) for Docker deployment, production configuration, and capacity guidance.
