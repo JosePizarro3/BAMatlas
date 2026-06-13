@@ -4,6 +4,7 @@
 
 - Framework: Django 5.2 LTS
 - Local database: SQLite
+- Containerised local database: PostgreSQL via Docker Compose
 - Production database: PostgreSQL
 - Authentication now: local email-and-password accounts
 - Authentication later: institutional SSO
@@ -57,13 +58,24 @@ Users can select existing expertise terms or type a new one. New terms are creat
 
 ## Elasticsearch Strategy
 
-Docker is not required for Elasticsearch in development. If you want to experiment locally later, there are three workable options:
+Docker Compose now leaves an explicit extension point for Elasticsearch in local environments. If you want to experiment later, there are three workable options:
 
 1. Run without Elasticsearch and use the built-in Django search path. This is the recommended default during feature development.
-2. Install Elasticsearch separately on a machine where you have the capacity to manage services manually.
+2. Start the optional `elasticsearch` Compose profile for local experiments.
 3. Use a shared remote development instance if BAM IT provides one.
 
 For now, building the search layer behind a small abstraction will let us use the database locally and switch to Elasticsearch in production later without rewriting the UI.
+
+## Deployment Shape
+
+Milestone 5 adds:
+
+- a single Docker image for local and production use
+- a Compose stack with Django, PostgreSQL, Mailpit, and an optional Elasticsearch profile
+- environment-variable driven configuration for database, hosts, email, and HTTPS settings
+- a `healthz` endpoint for container or load-balancer health checks
+
+This keeps the runtime model simple while remaining compatible with more conservative infrastructure teams.
 
 ## SSO Migration Plan
 

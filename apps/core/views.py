@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.views.generic import TemplateView
 
 from apps.directory.services import (
@@ -17,3 +18,7 @@ class HomeView(TemplateView):
         )
         context["public_profile_count"] = get_public_profile_count()
         return context
+
+
+def health_view(request):
+    return JsonResponse({"status": "ok"})

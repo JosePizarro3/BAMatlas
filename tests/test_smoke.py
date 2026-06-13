@@ -9,3 +9,10 @@ def test_home_page_returns_ok():
 
     assert response.status_code == 200
     assert b"BAMatlas" in response.content
+
+
+def test_health_endpoint_returns_ok():
+    response = Client().get("/healthz/")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
