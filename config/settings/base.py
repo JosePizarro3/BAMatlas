@@ -1,12 +1,28 @@
+import os
 from pathlib import Path
 
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-SECRET_KEY = "unsafe-development-placeholder"
-DEBUG = False
-ALLOWED_HOSTS: list[str] = []
+
+def env_bool(name: str, default: bool) -> bool:
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return default
+    return raw_value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name: str, default: list[str] | None = None) -> list[str]:
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return list(default or [])
+    return [item.strip() for item in raw_value.split(",") if item.strip()]
+
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "unsafe-development-placeholder")
+DEBUG = env_bool("DJANGO_DEBUG", False)
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -94,15 +110,28 @@ LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "accounts:account-home"
 LOGOUT_REDIRECT_URL = "/"
 
-ACCOUNT_ALLOWED_EMAIL_DOMAINS = ["bam.de"]
-ACCOUNT_REQUIRE_ADMIN_APPROVAL = True
+ACCOUNT_ALLOWED_EMAIL_DOMAINS = env_list(
+    "ACCOUNT_ALLOWED_EMAIL_DOMAINS",
+    ["bam.de"],
+)
+ACCOUNT_REQUIRE_ADMIN_APPROVAL = env_bool("ACCOUNT_REQUIRE_ADMIN_APPROVAL", True)
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "noreply@bamatlas.local"
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@bamatlas.local")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "25"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 STORAGES = {
     "default": {

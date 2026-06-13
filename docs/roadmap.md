@@ -63,7 +63,10 @@ Objective: prepare the app for institutional deployment and future authenticatio
 Includes:
 
 - Dockerfile
+- docker-compose based local stack
 - production deployment notes
+- health check endpoint
 - PostgreSQL guidance
+- realistic capacity estimates
 - Elasticsearch integration plan
 - SSO implementation plan
