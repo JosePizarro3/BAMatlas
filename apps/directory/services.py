@@ -54,13 +54,15 @@ def replace_profile_expertise(profile, names: list[str], *, created_by=None):
 def get_public_profile_queryset():
     from .models import Profile
 
-    queryset = Profile.objects.select_related("user").prefetch_related(
-        Prefetch("expertise_terms")
-    ).filter(
-        is_public=True,
-        moderation_status=Profile.ModerationStatus.PUBLISHED,
-        user__is_active=True,
-        user__is_email_verified=True,
+    queryset = (
+        Profile.objects.select_related("user")
+        .prefetch_related(Prefetch("expertise_terms"))
+        .filter(
+            is_public=True,
+            moderation_status=Profile.ModerationStatus.PUBLISHED,
+            user__is_active=True,
+            user__is_email_verified=True,
+        )
     )
     if settings.ACCOUNT_REQUIRE_ADMIN_APPROVAL:
         queryset = queryset.filter(user__is_approved=True)
@@ -91,9 +93,7 @@ def filter_public_profiles(*, query: str = "", expertise: str = "", organization
                 filter=Q(expertise_terms__normalized_name__in=normalized_names),
                 distinct=True,
             )
-        ).filter(
-            matched_expertise_count=len(normalized_names)
-        )
+        ).filter(matched_expertise_count=len(normalized_names))
 
     if organization:
         queryset = queryset.filter(organizational_entity__icontains=organization)

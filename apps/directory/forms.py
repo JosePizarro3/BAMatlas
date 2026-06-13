@@ -66,12 +66,12 @@ class ProfileForm(forms.ModelForm):
         self.fields["location"].choices = [("", "Select a BAM site")] + list(
             Profile.Location.choices
         )
-        self.fields["organizational_entity"].help_text = (
-            "Use the BAM department code, for example 6.1 or VP.1."
-        )
-        self.fields["is_public"].help_text = (
-            "Turn this on when you want colleagues to find your profile in the directory."
-        )
+        self.fields[
+            "organizational_entity"
+        ].help_text = "Use the BAM department code, for example 6.1 or VP.1."
+        self.fields[
+            "is_public"
+        ].help_text = "Turn this on when you want colleagues to find your profile in the directory."
         self.order_fields(
             [
                 "first_name",
