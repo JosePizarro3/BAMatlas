@@ -10,22 +10,41 @@
   <body>
     <header class="site-header">
       <div class="wrap">
-        <a class="brand" href="/">BAMatlas</a>
+        <a class="brand" href="{% url 'core:home' %}">BAMatlas</a>
         <nav class="site-nav" aria-label="Primary navigation">
-          <a href="{% url 'directory:list' %}">Directory</a>
-          <a href="/">Home</a>
+          <a
+            href="{% url 'core:home' %}"
+            class="{% if request.resolver_match.view_name == 'core:home' or request.resolver_match.view_name == 'directory:list' or request.resolver_match.view_name == 'directory:profile-detail' %}nav-current{% endif %}"
+            {% if request.resolver_match.view_name == 'core:home' or request.resolver_match.view_name == 'directory:list' or request.resolver_match.view_name == 'directory:profile-detail' %}aria-current="page"{% endif %}
+          >Directory</a>
           {% if request.user.is_authenticated %}
-            <a href="{% url 'accounts:account-home' %}">My account</a>
+            <a
+              href="{% url 'accounts:account-home' %}"
+              class="{% if request.resolver_match.view_name == 'accounts:account-home' or request.resolver_match.view_name == 'directory:profile-edit' %}nav-current{% endif %}"
+              {% if request.resolver_match.view_name == 'accounts:account-home' or request.resolver_match.view_name == 'directory:profile-edit' %}aria-current="page"{% endif %}
+            >My account</a>
             {% if request.user.is_staff %}
-              <a href="{% url 'directory:moderation-dashboard' %}">Moderation</a>
+              <a
+                href="{% url 'directory:moderation-dashboard' %}"
+                class="{% if request.resolver_match.view_name == 'directory:moderation-dashboard' %}nav-current{% endif %}"
+                {% if request.resolver_match.view_name == 'directory:moderation-dashboard' %}aria-current="page"{% endif %}
+              >Moderation</a>
             {% endif %}
             <form action="{% url 'accounts:logout' %}" method="post">
               {% csrf_token %}
               <button type="submit" class="link-button">Sign out</button>
             </form>
           {% else %}
-            <a href="{% url 'accounts:login' %}">Sign in</a>
-            <a class="nav-cta" href="{% url 'accounts:register' %}">Create account</a>
+            <a
+              href="{% url 'accounts:login' %}"
+              class="{% if request.resolver_match.view_name == 'accounts:login' %}nav-current{% endif %}"
+              {% if request.resolver_match.view_name == 'accounts:login' %}aria-current="page"{% endif %}
+            >Sign in</a>
+            <a
+              class="nav-cta {% if request.resolver_match.view_name == 'accounts:register' %}nav-current{% endif %}"
+              href="{% url 'accounts:register' %}"
+              {% if request.resolver_match.view_name == 'accounts:register' %}aria-current="page"{% endif %}
+            >Create account</a>
           {% endif %}
         </nav>
       </div>

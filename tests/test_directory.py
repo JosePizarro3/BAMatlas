@@ -17,7 +17,7 @@ def create_directory_user(
     approved=True,
     public=True,
     expertise=None,
-    organization="Division 6.1",
+    organization="6.1",
     location=Profile.Location.UE,
     publish=True,
 ):
@@ -81,7 +81,7 @@ def test_profile_edit_updates_public_data_and_creates_expertise_terms(client):
         {
             "first_name": "Elena",
             "last_name": "Editor",
-            "organizational_entity": "Division 4.2",
+            "organizational_entity": "4.2",
             "job_title": "Senior Scientist",
             "location": Profile.Location.AH,
             "research_summary": "Develops methods for diffraction and imaging.",
@@ -96,7 +96,7 @@ def test_profile_edit_updates_public_data_and_creates_expertise_terms(client):
     assert response.headers["Location"] == reverse("accounts:account-home")
     assert user.first_name == "Elena"
     assert user.last_name == "Editor"
-    assert profile.organizational_entity == "Division 4.2"
+    assert profile.organizational_entity == "4.2"
     assert profile.location == Profile.Location.AH
     assert profile.moderation_status == Profile.ModerationStatus.PENDING_REVIEW
     assert set(profile.expertise_terms.values_list("name", flat=True)) == {
@@ -120,7 +120,7 @@ def test_published_profile_edit_flags_pending_updates_but_stays_public(client):
         {
             "first_name": "Public",
             "last_name": "Editor",
-            "organizational_entity": "Division 4.2",
+            "organizational_entity": "4.2",
             "job_title": "Senior Scientist",
             "location": Profile.Location.AH,
             "research_summary": "Updated summary",
@@ -151,7 +151,7 @@ def test_staff_profile_edit_is_auto_published_and_listed(client):
         {
             "first_name": "Mod",
             "last_name": "Erator",
-            "organizational_entity": "Division 7.1",
+            "organizational_entity": "7.1",
             "job_title": "Moderator",
             "location": Profile.Location.UE,
             "research_summary": "Runs simulation reviews.",
@@ -185,7 +185,7 @@ def test_profile_edit_rejects_unknown_location_code(client):
         {
             "first_name": "Invalid",
             "last_name": "Location",
-            "organizational_entity": "Division 4.2",
+            "organizational_entity": "4.2",
             "job_title": "Senior Scientist",
             "location": "BERLIN",
             "research_summary": "Develops methods for diffraction and imaging.",
@@ -196,6 +196,61 @@ def test_profile_edit_rejects_unknown_location_code(client):
 
     assert response.status_code == 200
     assert b"Select a valid choice" in response.content
+
+
+def test_profile_edit_rejects_non_code_organizational_entity(client):
+    user = create_directory_user(
+        email="invalid-organization@bam.de",
+        first_name="Invalid",
+        last_name="Organisation",
+        expertise=["Microscopy"],
+    )
+    client.force_login(user)
+
+    response = client.post(
+        reverse("directory:profile-edit"),
+        {
+            "first_name": "Invalid",
+            "last_name": "Organisation",
+            "organizational_entity": "Division 4.2 Materials Chemistry",
+            "job_title": "Senior Scientist",
+            "location": Profile.Location.AH,
+            "research_summary": "Develops methods for diffraction and imaging.",
+            "is_public": "on",
+            "expertise_terms": "X-ray diffraction",
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"Use a BAM department code such as 6.1 or VP.1." in response.content
+
+
+def test_profile_edit_accepts_alphanumeric_department_code(client):
+    user = create_directory_user(
+        email="vp-code@bam.de",
+        first_name="Valid",
+        last_name="Code",
+        expertise=["Microscopy"],
+    )
+    client.force_login(user)
+
+    response = client.post(
+        reverse("directory:profile-edit"),
+        {
+            "first_name": "Valid",
+            "last_name": "Code",
+            "organizational_entity": "VP.1",
+            "job_title": "Senior Scientist",
+            "location": Profile.Location.AH,
+            "research_summary": "Develops methods for diffraction and imaging.",
+            "is_public": "on",
+            "expertise_terms": "X-ray diffraction",
+        },
+    )
+
+    user.refresh_from_db()
+    assert response.status_code == 302
+    assert user.profile.organizational_entity == "VP.1"
 
 
 def test_directory_list_only_shows_public_verified_profiles(client):
@@ -243,6 +298,30 @@ def test_directory_filters_by_expertise_term(client):
     assert b"Corrosion Researcher" not in response.content
 
 
+def test_directory_filters_by_multiple_expertise_terms_with_and_logic(client):
+    create_directory_user(
+        email="matches-both@bam.de",
+        first_name="Dual",
+        last_name="Expert",
+        expertise=["X-ray diffraction", "Corrosion"],
+    )
+    create_directory_user(
+        email="matches-one@bam.de",
+        first_name="Single",
+        last_name="Expert",
+        expertise=["X-ray diffraction"],
+    )
+
+    response = client.get(
+        reverse("directory:list"),
+        {"expertise": "X-ray diffraction, Corrosion"},
+    )
+
+    assert response.status_code == 200
+    assert b"Dual Expert" in response.content
+    assert b"Single Expert" not in response.content
+
+
 def test_featured_term_counts_only_include_published_profiles():
     create_directory_user(
         email="published-sim@bam.de",
@@ -288,7 +367,7 @@ def test_home_and_directory_show_consistent_featured_terms(client):
         {
             "first_name": "Mod",
             "last_name": "Erator",
-            "organizational_entity": "Division 7.1",
+            "organizational_entity": "7.1",
             "job_title": "Moderator",
             "location": Profile.Location.UE,
             "research_summary": "Keeps the directory healthy.",
@@ -341,7 +420,7 @@ def test_staff_moderation_dashboard_can_publish_profile_and_record_audit_event(c
         {
             "first_name": "Pending",
             "last_name": "Profile",
-            "organizational_entity": "Division 4.2",
+            "organizational_entity": "4.2",
             "job_title": "Scientist",
             "location": Profile.Location.UE,
             "research_summary": "Ready for review.",
@@ -391,7 +470,7 @@ def test_requested_changes_can_be_resubmitted_for_review(client):
         {
             "first_name": "Resubmit",
             "last_name": "User",
-            "organizational_entity": "Division 4.2",
+            "organizational_entity": "4.2",
             "job_title": "Scientist",
             "location": Profile.Location.UE,
             "research_summary": "First version.",
@@ -420,7 +499,7 @@ def test_requested_changes_can_be_resubmitted_for_review(client):
         {
             "first_name": "Resubmit",
             "last_name": "User",
-            "organizational_entity": "Division 4.2",
+            "organizational_entity": "4.2",
             "job_title": "Scientist",
             "location": Profile.Location.UE,
             "research_summary": "Updated version with the requested clarification.",

@@ -1,3 +1,14 @@
+function parseExpertiseList(value) {
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((value, index, values) => {
+      const normalized = value.toLowerCase();
+      return values.findIndex((item) => item.toLowerCase() === normalized) === index;
+    });
+}
+
 function setupExpertiseAutocomplete(input) {
   const endpoint = input.dataset.autocompleteUrl;
   if (!endpoint) {
@@ -22,11 +33,12 @@ function setupExpertiseAutocomplete(input) {
 
   function replaceValue(value) {
     if (mode === "multi") {
-      const parts = input.value
-        .split(",")
-        .map((part) => part.trim())
-        .filter(Boolean);
-      parts[parts.length - 1] = value;
+      const parts = parseExpertiseList(input.value);
+      if (parts.length) {
+        parts[parts.length - 1] = value;
+      } else {
+        parts.push(value);
+      }
       input.value = `${parts.join(", ")}${parts.length ? ", " : ""}`;
       return;
     }
