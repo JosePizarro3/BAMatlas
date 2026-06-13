@@ -34,12 +34,47 @@ body {
   backdrop-filter: blur(10px);
 }
 
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .brand {
   color: var(--accent-dark);
   text-decoration: none;
   font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.site-nav a,
+.link-button {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.98rem;
+}
+
+.nav-cta {
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  background: rgba(164, 61, 28, 0.1);
+}
+
+.link-button {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
 }
 
 .hero {
@@ -69,6 +104,19 @@ h1 {
   margin: 1.5rem 0 2.5rem;
 }
 
+.lead.compact {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.02rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -94,8 +142,139 @@ h1 {
   line-height: 1.6;
 }
 
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.85rem 1.2rem;
+  text-decoration: none;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.button-primary {
+  background: var(--accent);
+  color: #fff9f5;
+}
+
+.button-secondary {
+  background: transparent;
+  color: var(--accent-dark);
+  border-color: rgba(123, 46, 21, 0.3);
+}
+
+.panel {
+  max-width: 720px;
+  margin: 3rem auto 4rem;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.auth-panel h1,
+.account-panel h1 {
+  max-width: 14ch;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.stacked-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.compact-form {
+  margin-top: 1.5rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.field label {
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid rgba(24, 35, 33, 0.15);
+  background: rgba(255, 255, 255, 0.86);
+  font: inherit;
+}
+
+.field input:focus {
+  outline: 2px solid rgba(164, 61, 28, 0.2);
+  border-color: rgba(164, 61, 28, 0.5);
+}
+
+.help-text,
+.inline-note {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.form-errors,
+.field-errors,
+.message {
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+}
+
+.form-errors,
+.field-errors {
+  color: #7e2210;
+  background: rgba(195, 79, 43, 0.1);
+}
+
+.message-stack {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.message {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(24, 35, 33, 0.1);
+}
+
+.message.success {
+  border-color: rgba(50, 110, 79, 0.2);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.status-card {
+  padding: 1.25rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(24, 35, 33, 0.08);
+}
+
+.status-card h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
 @media (max-width: 640px) {
   .hero {
     padding-top: 3rem;
+  }
+
+  .site-header .wrap {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .panel {
+    padding: 1.4rem;
   }
 }

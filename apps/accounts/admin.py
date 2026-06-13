@@ -13,14 +13,23 @@ class UserAdmin(DjangoUserAdmin):
         "is_active",
         "is_email_verified",
         "is_approved",
+        "approved_at",
         "created_at",
     )
     list_filter = ("is_staff", "is_superuser", "is_active", "is_email_verified", "is_approved")
     search_fields = ("email",)
-    readonly_fields = ("last_login", "date_joined", "created_at", "updated_at")
+    readonly_fields = (
+        "last_login",
+        "date_joined",
+        "created_at",
+        "updated_at",
+        "email_verified_at",
+        "approved_at",
+    )
+    actions = ("approve_selected_users",)
 
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
+        (None, {"fields": ("email", "password", "first_name", "last_name")}),
         (
             "Access",
             {
@@ -33,7 +42,10 @@ class UserAdmin(DjangoUserAdmin):
                 )
             },
         ),
-        ("Verification", {"fields": ("is_email_verified", "is_approved")}),
+        (
+            "Verification",
+            {"fields": ("is_email_verified", "email_verified_at", "is_approved", "approved_at")},
+        ),
         ("Important dates", {"fields": ("last_login", "date_joined", "created_at", "updated_at")}),
     )
     add_fieldsets = (
@@ -41,7 +53,24 @@ class UserAdmin(DjangoUserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "password1", "password2", "is_staff", "is_superuser"),
+                "fields": (
+                    "email",
+                    "first_name",
+                    "last_name",
+                    "password1",
+                    "password2",
+                    "is_staff",
+                    "is_superuser",
+                ),
             },
         ),
     )
+
+    @admin.action(description="Approve selected users")
+    def approve_selected_users(self, request, queryset):
+        approved_count = 0
+        for user in queryset.iterator():
+            if not user.is_approved:
+                user.mark_approved()
+                approved_count += 1
+        self.message_user(request, f"Approved {approved_count} user(s).")

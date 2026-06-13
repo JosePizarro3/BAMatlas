@@ -27,6 +27,8 @@ Includes:
 - `@bam.de` domain restriction
 - verification email flow
 - optional admin moderation before full activation
+- public login and logout pages
+- account status page for confirmed users
 
 ## Milestone 3: Directory
 

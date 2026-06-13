@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}My Account | BAMatlas{% endblock %}
+
+{% block content %}
+  <section class="panel account-panel">
+    <p class="eyebrow">My account</p>
+    <h1>{{ request.user.get_full_name|default:request.user.email }}</h1>
+    <div class="status-grid">
+      <article class="status-card">
+        <h2>Email</h2>
+        <p>{{ request.user.email }}</p>
+      </article>
+      <article class="status-card">
+        <h2>Email verified</h2>
+        <p>{{ request.user.is_email_verified|yesno:"Yes,No" }}</p>
+      </article>
+      <article class="status-card">
+        <h2>Admin approved</h2>
+        <p>{{ request.user.is_approved|yesno:"Yes,No" }}</p>
+      </article>
+    </div>
+    <p class="lead compact">
+      The directory profile and expertise metadata arrive in the next milestone. This page is the authenticated landing point for confirmed accounts.
+    </p>
+  </section>
+{% endblock %}

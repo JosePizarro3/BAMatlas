@@ -89,9 +89,12 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
-LOGIN_URL = "admin:login"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "accounts:account-home"
 LOGOUT_REDIRECT_URL = "/"
+
+ACCOUNT_ALLOWED_EMAIL_DOMAINS = ["bam.de"]
+ACCOUNT_REQUIRE_ADMIN_APPROVAL = True
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "noreply@bamatlas.local"

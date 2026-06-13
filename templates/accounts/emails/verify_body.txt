@@ -1,0 +1,11 @@
+Hello {{ user.get_full_name|default:user.email }},
+
+Please verify your BAMatlas account by opening the link below:
+
+{{ verification_url }}
+
+{% if require_admin_approval %}
+After verification, an administrator must still approve your first activation before sign in is enabled.
+{% else %}
+After verification, you can sign in immediately.
+{% endif %}

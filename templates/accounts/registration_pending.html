@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Your Email | BAMatlas{% endblock %}
+
+{% block content %}
+  <section class="panel auth-panel">
+    <p class="eyebrow">Verification needed</p>
+    <h1>Check your email for the verification link.</h1>
+    <p class="lead compact">
+      We send verification links to the email address used during signup. In local development,
+      the email appears in the terminal where `runserver` is running.
+    </p>
+    <div class="status-card">
+      <p>
+        After verifying your email{% if request.session.pending_registration_email %} for
+        <strong>{{ request.session.pending_registration_email }}</strong>{% endif %},
+        you can sign in{% if not request.user.is_staff %} once any required admin approval is complete{% endif %}.
+      </p>
+    </div>
+    <h2>Need a fresh link?</h2>
+    <form action="{% url 'accounts:resend-verification' %}" method="post" class="stacked-form compact-form">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <div class="field-errors">{{ field.errors }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="button button-secondary">Send verification email again</button>
+    </form>
+  </section>
+{% endblock %}

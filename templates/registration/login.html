@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In | BAMatlas{% endblock %}
+
+{% block content %}
+  <section class="panel auth-panel">
+    <p class="eyebrow">Sign in</p>
+    <h1>Access your BAMatlas account.</h1>
+    <p class="lead compact">
+      Use the institutional email address you registered with. Email verification is required before first sign in.
+    </p>
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <div class="field-errors">{{ field.errors }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="button button-primary">Sign in</button>
+    </form>
+    <p class="inline-note">
+      No account yet? <a href="{% url 'accounts:register' %}">Create one here</a>.
+    </p>
+  </section>
+{% endblock %}
