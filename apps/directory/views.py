@@ -11,8 +11,10 @@ from .models import AuditEvent, ExpertiseTerm, Profile
 from .services import (
     FEATURED_EXPERTISE_LIMIT,
     filter_public_profiles,
+    format_expertise_names,
     get_featured_expertise_terms,
     get_public_profile_queryset,
+    parse_expertise_names,
     record_audit_event,
 )
 
@@ -24,20 +26,17 @@ class DirectoryListView(ListView):
     template_name = "directory/directory_list.html"
 
     def get_queryset(self):
-        return filter_public_profiles(
-            query=self.request.GET.get("q", "").strip(),
-            expertise=self.request.GET.get("expertise", "").strip(),
-            organization=self.request.GET.get("organization", "").strip(),
-        )
+        return filter_public_profiles(expertise=self.request.GET.get("expertise", "").strip())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        selected_expertise_terms = parse_expertise_names(
+            self.request.GET.get("expertise", "").strip()
+        )
         context["featured_terms"] = get_featured_expertise_terms(
             limit=FEATURED_EXPERTISE_LIMIT
         )
-        context["search_query"] = self.request.GET.get("q", "").strip()
-        context["search_expertise"] = self.request.GET.get("expertise", "").strip()
-        context["search_organization"] = self.request.GET.get("organization", "").strip()
+        context["search_expertise"] = format_expertise_names(selected_expertise_terms)
         context["result_count"] = self.get_queryset().count()
         return context
 

@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.urls import reverse
@@ -32,9 +34,7 @@ class ProfileForm(forms.ModelForm):
             "is_public",
         )
         widgets = {
-            "organizational_entity": forms.TextInput(
-                attrs={"placeholder": "Division 6.1, Materials Chemistry"}
-            ),
+            "organizational_entity": forms.TextInput(attrs={"placeholder": "6.1"}),
             "job_title": forms.TextInput(attrs={"placeholder": "Research Scientist"}),
             "research_summary": forms.Textarea(
                 attrs={
@@ -47,6 +47,7 @@ class ProfileForm(forms.ModelForm):
             ),
         }
         labels = {
+            "organizational_entity": "Department code",
             "is_public": "Show this profile in the public directory",
         }
 
@@ -65,6 +66,12 @@ class ProfileForm(forms.ModelForm):
         self.fields["location"].choices = [("", "Select a BAM site")] + list(
             Profile.Location.choices
         )
+        self.fields["organizational_entity"].help_text = (
+            "Use the BAM department code, for example 6.1 or VP.1."
+        )
+        self.fields["is_public"].help_text = (
+            "Turn this on when you want colleagues to find your profile in the directory."
+        )
         self.order_fields(
             [
                 "first_name",
@@ -73,8 +80,8 @@ class ProfileForm(forms.ModelForm):
                 "job_title",
                 "location",
                 "research_summary",
-                "is_public",
                 "expertise_terms",
+                "is_public",
             ]
         )
 
@@ -93,7 +100,9 @@ class ProfileForm(forms.ModelForm):
     def clean_organizational_entity(self):
         value = self.cleaned_data["organizational_entity"].strip()
         if not value:
-            raise ValidationError("Enter an organisational entity.")
+            raise ValidationError("Enter a department code.")
+        if not re.fullmatch(r"[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)+", value):
+            raise ValidationError("Use a BAM department code such as 6.1 or VP.1.")
         return value
 
     def clean_expertise_terms(self):

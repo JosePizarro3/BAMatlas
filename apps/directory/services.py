@@ -24,6 +24,10 @@ def parse_expertise_names(raw_value: str) -> list[str]:
     return list(seen.values())
 
 
+def format_expertise_names(names: list[str]) -> str:
+    return ", ".join(names)
+
+
 def get_or_create_expertise_terms(names: list[str], *, created_by=None):
     from .models import ExpertiseTerm
 
@@ -60,7 +64,7 @@ def get_public_profile_queryset():
     )
     if settings.ACCOUNT_REQUIRE_ADMIN_APPROVAL:
         queryset = queryset.filter(user__is_approved=True)
-    return queryset
+    return queryset.order_by("user__last_name", "user__first_name", "user__email")
 
 
 def filter_public_profiles(*, query: str = "", expertise: str = "", organization: str = ""):
@@ -79,8 +83,16 @@ def filter_public_profiles(*, query: str = "", expertise: str = "", organization
         )
 
     if expertise:
-        queryset = queryset.filter(
-            expertise_terms__normalized_name=normalize_expertise_name(expertise)
+        expertise_names = parse_expertise_names(expertise)
+        normalized_names = [normalize_expertise_name(name) for name in expertise_names]
+        queryset = queryset.annotate(
+            matched_expertise_count=Count(
+                "expertise_terms",
+                filter=Q(expertise_terms__normalized_name__in=normalized_names),
+                distinct=True,
+            )
+        ).filter(
+            matched_expertise_count=len(normalized_names)
         )
 
     if organization:

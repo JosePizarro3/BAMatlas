@@ -1,21 +1,17 @@
 {% extends "base.html" %}
 {% load static %}
+{% load directory_expertise %}
 
 {% block title %}Directory | BAMatlas{% endblock %}
 
 {% block content %}
-  <section class="hero compact-hero">
-    <p class="eyebrow">Directory</p>
-    <h1>Search public BAM expertise.</h1>
+  <section class="hero compact-hero directory-landing">
+    <h1>Find BAM expertise.</h1>
     <p class="lead compact">
-      Filter by expertise, organisation, or free text. Click a term to narrow results quickly.
+      Search BAMatlas by expertise term and quickly find the right colleague to contact.
     </p>
     <form method="get" class="search-shell">
-      <div class="search-grid search-grid-wide">
-        <div class="field">
-          <label for="directory-query">Search people or topics</label>
-          <input id="directory-query" name="q" type="text" value="{{ search_query }}" placeholder="Diffraction, fatigue, Schmidt">
-        </div>
+      <div class="search-grid search-grid-single">
         <div class="field autocomplete-field">
           <label for="directory-expertise">Expertise</label>
           <input
@@ -23,25 +19,40 @@
             name="expertise"
             type="text"
             value="{{ search_expertise }}"
-            placeholder="X-ray diffraction"
-            data-expertise-suggestions="single"
+            placeholder="X-ray diffraction, corrosion"
+            data-expertise-suggestions="multi"
             data-autocomplete-url="{% url 'directory:expertise-suggest' %}"
           >
         </div>
-        <div class="field">
-          <label for="directory-organization">Organisation</label>
-          <input id="directory-organization" name="organization" type="text" value="{{ search_organization }}" placeholder="Division 6.1">
-        </div>
       </div>
-      <div class="hero-actions">
-        <button type="submit" class="button button-primary">Apply filters</button>
-        <a class="button button-secondary" href="{% url 'directory:list' %}">Clear</a>
+      <div class="hero-actions hero-actions-split">
+        <div class="hero-actions-group">
+          <button type="submit" class="button button-primary">Search directory</button>
+          {% if request.user.is_authenticated %}
+            <a class="button button-secondary" href="{% url 'directory:profile-edit' %}">Edit my profile</a>
+          {% else %}
+            <a class="button button-secondary" href="{% url 'accounts:register' %}">Create account</a>
+          {% endif %}
+        </div>
+        <a
+          class="button button-secondary button-icon"
+          href="{% url 'core:home' %}"
+          aria-label="Clear expertise filter"
+          title="Clear expertise filter"
+        >
+          <span aria-hidden="true">&#x21bb;</span>
+        </a>
       </div>
     </form>
     {% if featured_terms %}
       <div class="chip-group">
         {% for term in featured_terms %}
-          <a class="chip{% if search_expertise and search_expertise|lower == term.name|lower %} chip-active{% endif %}" href="{% url 'directory:list' %}?expertise={{ term.name|urlencode }}">
+          {% expertise_chip_selected search_expertise term.name as term_selected %}
+          {% expertise_chip_query search_expertise term.name as term_query %}
+          <a
+            class="chip{% if term_selected %} chip-active{% endif %}"
+            href="{% if term_query %}?expertise={{ term_query|urlencode }}{% else %}{% url 'core:home' %}{% endif %}"
+          >
             {{ term.name }} <span>{{ term.public_profile_count }}</span>
           </a>
         {% endfor %}
@@ -51,10 +62,7 @@
 
   <section class="results-shell">
     <div class="results-header">
-      <h2>{{ result_count }} result{{ result_count|pluralize }}</h2>
-      {% if request.user.is_authenticated %}
-        <a class="button button-secondary" href="{% url 'directory:profile-edit' %}">Edit my profile</a>
-      {% endif %}
+      <h2>{{ result_count }} researcher{{ result_count|pluralize }}</h2>
     </div>
     {% if profiles %}
       <div class="profile-grid">
@@ -74,7 +82,12 @@
             {% endif %}
             <div class="tag-row">
               {% for term in profile.expertise_terms.all %}
-                <a class="chip chip-small" href="{% url 'directory:list' %}?expertise={{ term.name|urlencode }}">{{ term.name }}</a>
+                {% expertise_chip_selected search_expertise term.name as term_selected %}
+                {% expertise_chip_query search_expertise term.name as term_query %}
+                <a
+                  class="chip chip-small{% if term_selected %} chip-active{% endif %}"
+                  href="{% if term_query %}?expertise={{ term_query|urlencode }}{% else %}{% url 'core:home' %}{% endif %}"
+                >{{ term.name }}</a>
               {% empty %}
                 <span class="inline-note">No expertise terms yet.</span>
               {% endfor %}
@@ -85,18 +98,23 @@
       {% if is_paginated %}
         <nav class="pagination" aria-label="Directory pages">
           {% if page_obj.has_previous %}
-            <a class="button button-secondary" href="?page={{ page_obj.previous_page_number }}&q={{ search_query|urlencode }}&expertise={{ search_expertise|urlencode }}&organization={{ search_organization|urlencode }}">Previous</a>
+            <a class="button button-secondary" href="?page={{ page_obj.previous_page_number }}&expertise={{ search_expertise|urlencode }}">Previous</a>
           {% endif %}
           <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
           {% if page_obj.has_next %}
-            <a class="button button-secondary" href="?page={{ page_obj.next_page_number }}&q={{ search_query|urlencode }}&expertise={{ search_expertise|urlencode }}&organization={{ search_organization|urlencode }}">Next</a>
+            <a class="button button-secondary" href="?page={{ page_obj.next_page_number }}&expertise={{ search_expertise|urlencode }}">Next</a>
           {% endif %}
         </nav>
       {% endif %}
     {% else %}
       <div class="empty-state">
-        <h2>No public profiles matched those filters.</h2>
-        <p>Try a broader search, remove one filter, or pick one of the suggested expertise terms above.</p>
+        {% if search_expertise %}
+          <h2>No public profiles matched that expertise filter.</h2>
+          <p>Try removing one term, refreshing the directory, or picking a different expertise tag above.</p>
+        {% else %}
+          <h2>No public profiles are available yet.</h2>
+          <p>Profiles will appear here as BAM researchers publish their expertise.</p>
+        {% endif %}
       </div>
     {% endif %}
   </section>
