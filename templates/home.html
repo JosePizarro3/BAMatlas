@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}BAMatlas{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <p class="eyebrow">Milestone 1</p>
+    <h1>Expertise discovery for BAM, built for a clean and secure start.</h1>
+    <p class="lead">
+      This first milestone establishes the Django foundation, custom account model,
+      and environment-aware settings that later features will build on.
+    </p>
+    <div class="card-grid">
+      <article class="card">
+        <h2>Secure by default</h2>
+        <p>Argon2 password hashing, production-only security flags, and a custom user model from day one.</p>
+      </article>
+      <article class="card">
+        <h2>Search-ready</h2>
+        <p>The next milestones add structured expertise terms, autocomplete, and a public people directory.</p>
+      </article>
+      <article class="card">
+        <h2>SSO later</h2>
+        <p>Local accounts keep the project moving now while leaving a clear migration path to institutional SSO.</p>
+      </article>
+    </div>
+  </section>
+{% endblock %}
