@@ -1,3 +1,5 @@
+"""Forms for editing public directory profiles."""
+
 import re
 
 from django import forms
@@ -5,10 +7,19 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from .models import Profile
-from .services import parse_expertise_names, replace_profile_expertise
+from .services import (
+    MAX_EXPERTISE_TERM_LENGTH,
+    MAX_EXPERTISE_TERMS,
+    parse_expertise_names,
+    replace_profile_expertise,
+)
+
+DEPARTMENT_CODE_RE = re.compile(r"[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)+")
 
 
 class ProfileForm(forms.ModelForm):
+    """Edit the public profile fields that power the expertise directory."""
+
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
     expertise_terms = forms.CharField(
@@ -101,17 +112,31 @@ class ProfileForm(forms.ModelForm):
         value = self.cleaned_data["organizational_entity"].strip()
         if not value:
             raise ValidationError("Enter a department code.")
-        if not re.fullmatch(r"[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)+", value):
+        if not DEPARTMENT_CODE_RE.fullmatch(value):
             raise ValidationError("Use a BAM department code such as 6.1 or VP.1.")
         return value
 
     def clean_expertise_terms(self):
-        return parse_expertise_names(self.cleaned_data["expertise_terms"])
+        expertise_names = parse_expertise_names(self.cleaned_data["expertise_terms"])
+        if len(expertise_names) > MAX_EXPERTISE_TERMS:
+            raise ValidationError(
+                f"Add at most {MAX_EXPERTISE_TERMS} expertise terms to one profile."
+            )
+        too_long_names = [name for name in expertise_names if len(name) > MAX_EXPERTISE_TERM_LENGTH]
+        if too_long_names:
+            raise ValidationError(
+                f"Each expertise term must be at most {MAX_EXPERTISE_TERM_LENGTH} characters."
+            )
+        return expertise_names
 
     def clean(self):
         cleaned_data = super().clean()
         expertise_terms = cleaned_data.get("expertise_terms") or []
-        if cleaned_data.get("is_public") and not expertise_terms:
+        if (
+            cleaned_data.get("is_public")
+            and "expertise_terms" not in self.errors
+            and not expertise_terms
+        ):
             self.add_error(
                 "expertise_terms",
                 "Add at least one expertise term before publishing your profile.",
@@ -119,6 +144,8 @@ class ProfileForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, commit=True):
+        """Save the profile and route it back through the moderation workflow."""
+
         profile = super().save(commit=False)
         self.user.first_name = self.cleaned_data["first_name"]
         self.user.last_name = self.cleaned_data["last_name"]

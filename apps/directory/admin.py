@@ -1,9 +1,14 @@
+"""Admin configuration for public profiles, expertise terms, and audits."""
+
 from django.contrib import admin
 
 from .models import AuditEvent, ExpertiseTerm, Profile, ProfileExpertise
+from .services import record_audit_event
 
 
 class ProfileExpertiseInline(admin.TabularInline):
+    """Inline editor for a profile's expertise term relationships."""
+
     model = ProfileExpertise
     autocomplete_fields = ("term",)
     extra = 1
@@ -11,6 +16,8 @@ class ProfileExpertiseInline(admin.TabularInline):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
+    """Moderation-focused admin for researcher profiles."""
+
     autocomplete_fields = ("user",)
     inlines = (ProfileExpertiseInline,)
     list_display = (
@@ -88,7 +95,7 @@ class ProfileAdmin(admin.ModelAdmin):
         count = 0
         for profile in queryset.iterator():
             profile.publish(reviewed_by=request.user, notes=profile.moderation_notes)
-            AuditEvent.objects.create(
+            record_audit_event(
                 actor=request.user,
                 target_user=profile.user,
                 profile=profile,
@@ -103,7 +110,7 @@ class ProfileAdmin(admin.ModelAdmin):
         count = 0
         for profile in queryset.iterator():
             profile.request_changes(reviewed_by=request.user, notes=profile.moderation_notes)
-            AuditEvent.objects.create(
+            record_audit_event(
                 actor=request.user,
                 target_user=profile.user,
                 profile=profile,
@@ -118,7 +125,7 @@ class ProfileAdmin(admin.ModelAdmin):
         count = 0
         for profile in queryset.iterator():
             profile.archive(reviewed_by=request.user, notes=profile.moderation_notes)
-            AuditEvent.objects.create(
+            record_audit_event(
                 actor=request.user,
                 target_user=profile.user,
                 profile=profile,
@@ -129,32 +136,44 @@ class ProfileAdmin(admin.ModelAdmin):
         self.message_user(request, f"Archived {count} profile(s).")
 
     def has_delete_permission(self, request, obj=None):
+        """Disallow destructive profile deletion from the admin."""
+
         return False
 
 
 @admin.register(ExpertiseTerm)
 class ExpertiseTermAdmin(admin.ModelAdmin):
+    """Admin for maintaining the expertise vocabulary table."""
+
     list_display = ("name", "normalized_name", "is_user_generated", "created_at")
     list_filter = ("is_user_generated",)
     readonly_fields = ("normalized_name", "created_at")
     search_fields = ("name", "normalized_name")
 
     def has_delete_permission(self, request, obj=None):
+        """Disallow destructive expertise deletion from the admin."""
+
         return False
 
 
 @admin.register(ProfileExpertise)
 class ProfileExpertiseAdmin(admin.ModelAdmin):
+    """Admin view of the explicit profile-term relationships."""
+
     autocomplete_fields = ("profile", "term")
     list_display = ("profile", "term", "created_at")
     search_fields = ("profile__user__first_name", "profile__user__last_name", "term__name")
 
     def has_delete_permission(self, request, obj=None):
+        """Disallow destructive join-row deletion from the admin."""
+
         return False
 
 
 @admin.register(AuditEvent)
 class AuditEventAdmin(admin.ModelAdmin):
+    """Read-only admin for the moderation and account audit trail."""
+
     autocomplete_fields = ("actor", "target_user", "profile")
     list_display = ("action", "target_user", "profile", "actor", "created_at")
     list_filter = ("action",)

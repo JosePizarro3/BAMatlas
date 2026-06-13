@@ -1,3 +1,5 @@
+"""Authentication models for BAMatlas."""
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -7,6 +9,8 @@ from .managers import UserManager
 
 
 class User(AbstractUser):
+    """Custom user model that uses institutional email as the login identifier."""
+
     username = None
     email = models.EmailField(unique=True)
     is_email_verified = models.BooleanField(default=False)
@@ -36,6 +40,8 @@ class User(AbstractUser):
         return self.email
 
     def mark_email_verified(self, *, save: bool = True) -> None:
+        """Persist the first successful email-verification event."""
+
         if not self.is_email_verified:
             self.is_email_verified = True
             self.email_verified_at = timezone.now()
@@ -43,6 +49,8 @@ class User(AbstractUser):
                 self.save(update_fields=["is_email_verified", "email_verified_at", "updated_at"])
 
     def mark_approved(self, *, save: bool = True) -> None:
+        """Persist the first successful admin-approval event."""
+
         if not self.is_approved:
             self.is_approved = True
             self.approved_at = timezone.now()
@@ -50,6 +58,8 @@ class User(AbstractUser):
                 self.save(update_fields=["is_approved", "approved_at", "updated_at"])
 
     def deactivate(self, *, by_user=None, save: bool = True) -> None:
+        """Disable a user account without deleting institutional history."""
+
         if self.is_active:
             self.is_active = False
             self.deactivated_at = timezone.now()
@@ -60,6 +70,8 @@ class User(AbstractUser):
                 )
 
     def reactivate(self, *, save: bool = True) -> None:
+        """Restore a previously deactivated account."""
+
         if not self.is_active:
             self.is_active = True
             self.deactivated_at = None

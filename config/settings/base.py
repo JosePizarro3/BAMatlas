@@ -1,3 +1,5 @@
+"""Base Django settings shared by local and production environments."""
+
 import os
 from pathlib import Path
 
@@ -7,6 +9,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 def env_bool(name: str, default: bool) -> bool:
+    """Parse a permissive boolean environment variable."""
+
     raw_value = os.environ.get(name)
     if raw_value is None:
         return default
@@ -14,6 +18,8 @@ def env_bool(name: str, default: bool) -> bool:
 
 
 def env_list(name: str, default: list[str] | None = None) -> list[str]:
+    """Parse a comma-separated environment variable into a clean list."""
+
     raw_value = os.environ.get(name)
     if raw_value is None:
         return list(default or [])
@@ -129,8 +135,11 @@ EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)
 EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 STORAGES = {

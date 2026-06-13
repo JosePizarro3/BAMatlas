@@ -1,13 +1,18 @@
+"""Admin configuration for BAMatlas accounts."""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 from apps.directory.models import AuditEvent
+from apps.directory.services import record_audit_event
 
 from .models import User
 
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
+    """Operational user admin with moderation-safe bulk actions."""
+
     ordering = ("email",)
     list_display = (
         "email",
@@ -78,7 +83,7 @@ class UserAdmin(DjangoUserAdmin):
         for user in queryset.iterator():
             if not user.is_approved:
                 user.mark_approved()
-                AuditEvent.objects.create(
+                record_audit_event(
                     actor=request.user,
                     target_user=user,
                     action=AuditEvent.Action.USER_APPROVED,
@@ -92,7 +97,7 @@ class UserAdmin(DjangoUserAdmin):
         for user in queryset.iterator():
             if user != request.user and user.is_active:
                 user.deactivate(by_user=request.user)
-                AuditEvent.objects.create(
+                record_audit_event(
                     actor=request.user,
                     target_user=user,
                     action=AuditEvent.Action.USER_DEACTIVATED,
@@ -106,7 +111,7 @@ class UserAdmin(DjangoUserAdmin):
         for user in queryset.iterator():
             if not user.is_active:
                 user.reactivate()
-                AuditEvent.objects.create(
+                record_audit_event(
                     actor=request.user,
                     target_user=user,
                     action=AuditEvent.Action.USER_REACTIVATED,
@@ -115,4 +120,6 @@ class UserAdmin(DjangoUserAdmin):
         self.message_user(request, f"Reactivated {reactivated_count} user(s).")
 
     def has_delete_permission(self, request, obj=None):
+        """Disallow destructive user deletion from the admin."""
+
         return False

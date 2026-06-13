@@ -9,6 +9,7 @@ from apps.directory.forms import ProfileForm
 from apps.directory.models import AuditEvent, ExpertiseTerm, Profile
 from apps.directory.services import (
     format_expertise_names,
+    get_expertise_suggestions,
     get_featured_expertise_terms,
     get_or_create_expertise_terms,
     get_public_profile_count,
@@ -162,6 +163,50 @@ def test_profile_form_requires_expertise_for_public_profile():
     ]
 
 
+def test_profile_form_limits_the_number_of_expertise_terms():
+    user, profile = create_profile_user(email="too-many-terms@bam.de")
+    expertise_terms = ", ".join(f"Topic {index}" for index in range(21))
+    form = ProfileForm(
+        instance=profile,
+        user=user,
+        data={
+            "first_name": "Test",
+            "last_name": "User",
+            "organizational_entity": "6.1",
+            "job_title": "Scientist",
+            "location": Profile.Location.UE,
+            "research_summary": "Studies BAM expertise.",
+            "is_public": "on",
+            "expertise_terms": expertise_terms,
+        },
+    )
+
+    assert not form.is_valid()
+    assert form.errors["expertise_terms"] == ["Add at most 20 expertise terms to one profile."]
+
+
+def test_profile_form_rejects_overlong_expertise_term():
+    user, profile = create_profile_user(email="overlong-term@bam.de")
+    overlong_term = "A" * 256
+    form = ProfileForm(
+        instance=profile,
+        user=user,
+        data={
+            "first_name": "Test",
+            "last_name": "User",
+            "organizational_entity": "6.1",
+            "job_title": "Scientist",
+            "location": Profile.Location.UE,
+            "research_summary": "Studies BAM expertise.",
+            "is_public": "on",
+            "expertise_terms": overlong_term,
+        },
+    )
+
+    assert not form.is_valid()
+    assert form.errors["expertise_terms"] == ["Each expertise term must be at most 255 characters."]
+
+
 def test_profile_form_staff_save_auto_publishes_profile():
     user = User.objects.create_superuser(
         email="staff-form@bam.de",
@@ -247,6 +292,22 @@ def test_get_featured_expertise_terms_counts_only_public_profiles():
 
     assert featured[0].name == "Corrosion"
     assert featured[0].public_profile_count == 1
+
+
+def test_get_expertise_suggestions_only_returns_terms_from_public_profiles():
+    _, visible_profile = create_profile_user(email="suggest-visible@bam.de")
+    _, hidden_profile = create_profile_user(email="suggest-hidden@bam.de", public=False)
+    visible_term = ExpertiseTerm.objects.create(name="Corrosion")
+    hidden_term = ExpertiseTerm.objects.create(name="Internal Method")
+    visible_profile.expertise_terms.add(visible_term)
+    hidden_profile.expertise_terms.add(hidden_term)
+    visible_profile.publish(save=True)
+    hidden_profile.submit_for_review(save=True)
+
+    suggestions = get_expertise_suggestions(query="i")
+
+    assert "Internal Method" not in suggestions
+    assert "Corrosion" in get_expertise_suggestions(query="cor")
 
 
 def test_profile_form_non_public_profile_can_save_without_expertise():

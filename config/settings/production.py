@@ -1,3 +1,5 @@
+"""Production-only Django settings and transport security defaults."""
+
 import os
 
 from .base import *  # noqa: F403
@@ -14,9 +16,9 @@ SESSION_COOKIE_SECURE = True
 SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", True)  # noqa: F405
 SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "31536000"))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool(  # noqa: F405
-    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", True
+    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", False
 )
-SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", True)  # noqa: F405
+SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", False)  # noqa: F405
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 

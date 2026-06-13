@@ -1,3 +1,5 @@
+"""Views for the public expertise directory and moderation operations."""
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
@@ -7,11 +9,12 @@ from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView, UpdateView
 
 from .forms import ProfileForm
-from .models import AuditEvent, ExpertiseTerm, Profile
+from .models import AuditEvent, Profile
 from .services import (
     FEATURED_EXPERTISE_LIMIT,
     filter_public_profiles,
     format_expertise_names,
+    get_expertise_suggestions,
     get_featured_expertise_terms,
     get_public_profile_queryset,
     parse_expertise_names,
@@ -20,6 +23,8 @@ from .services import (
 
 
 class DirectoryListView(ListView):
+    """Landing page and directory listing filtered by expertise."""
+
     context_object_name = "profiles"
     model = Profile
     paginate_by = 12
@@ -40,6 +45,8 @@ class DirectoryListView(ListView):
 
 
 class ProfileDetailView(DetailView):
+    """Public profile detail page for a published researcher profile."""
+
     context_object_name = "profile"
     template_name = "directory/profile_detail.html"
 
@@ -52,6 +59,8 @@ class ProfileDetailView(DetailView):
 
 
 class ProfileEditView(LoginRequiredMixin, UpdateView):
+    """Self-service editor for the signed-in user's profile."""
+
     form_class = ProfileForm
     template_name = "directory/profile_form.html"
 
@@ -100,16 +109,16 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
 
 
 class ExpertiseSuggestionView(View):
+    """Autocomplete endpoint for expertise terms visible in the public directory."""
+
     def get(self, request, *args, **kwargs):
         query = request.GET.get("q", "").strip()
-        queryset = ExpertiseTerm.objects.all()
-        if query:
-            queryset = queryset.filter(name__icontains=query)
-        suggestions = list(queryset.order_by("name").values_list("name", flat=True)[:8])
-        return JsonResponse({"results": suggestions})
+        return JsonResponse({"results": get_expertise_suggestions(query=query)})
 
 
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Restrict a view to staff users while keeping normal login redirects."""
+
     raise_exception = True
 
     def test_func(self):
@@ -117,6 +126,8 @@ class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 
 
 class ModerationDashboardView(StaffRequiredMixin, TemplateView):
+    """Simple staff dashboard for approvals, moderation, and audit review."""
+
     template_name = "directory/moderation_dashboard.html"
 
     def get_context_data(self, **kwargs):

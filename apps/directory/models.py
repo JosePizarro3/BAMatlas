@@ -1,3 +1,5 @@
+"""Directory models for public profiles, expertise terms, and moderation history."""
+
 import uuid
 
 from django.conf import settings
@@ -9,6 +11,8 @@ from .services import clean_expertise_display_name, normalize_expertise_name
 
 
 class ExpertiseTerm(models.Model):
+    """Reusable expertise vocabulary item shown in search and autocomplete."""
+
     name = models.CharField(max_length=255)
     normalized_name = models.CharField(max_length=255, unique=True, db_index=True)
     is_user_generated = models.BooleanField(default=False)
@@ -28,12 +32,16 @@ class ExpertiseTerm(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        """Normalise the stored name before persisting the term."""
+
         self.name = clean_expertise_display_name(self.name)
         self.normalized_name = normalize_expertise_name(self.name)
         super().save(*args, **kwargs)
 
 
 class Profile(models.Model):
+    """Public-facing metadata about a BAM researcher."""
+
     class Location(models.TextChoices):
         UE = "UE", "UE"
         AH = "AH", "AH"
@@ -103,9 +111,13 @@ class Profile(models.Model):
 
     @property
     def is_listed_publicly(self) -> bool:
+        """Return whether the profile is visible in public directory views."""
+
         return self.is_public and self.moderation_status == self.ModerationStatus.PUBLISHED
 
     def submit_for_review(self, *, save: bool = True) -> None:
+        """Transition the profile into the appropriate moderation state."""
+
         now = timezone.now()
         if self.is_public:
             if self.moderation_status == self.ModerationStatus.PUBLISHED:
@@ -130,6 +142,8 @@ class Profile(models.Model):
             )
 
     def publish(self, *, reviewed_by=None, notes: str = "", save: bool = True) -> None:
+        """Mark a profile as publicly visible and moderation-complete."""
+
         now = timezone.now()
         self.is_public = True
         self.moderation_status = self.ModerationStatus.PUBLISHED
@@ -155,6 +169,8 @@ class Profile(models.Model):
             )
 
     def request_changes(self, *, reviewed_by=None, notes: str = "", save: bool = True) -> None:
+        """Send a profile back to the owner without making it public."""
+
         now = timezone.now()
         # Keep the user's intent to publish; visibility still stays off because
         # only published profiles are exposed publicly.
@@ -178,6 +194,8 @@ class Profile(models.Model):
             )
 
     def archive(self, *, reviewed_by=None, notes: str = "", save: bool = True) -> None:
+        """Remove a profile from the public directory while retaining the record."""
+
         now = timezone.now()
         self.is_public = False
         self.moderation_status = self.ModerationStatus.ARCHIVED
@@ -202,6 +220,8 @@ class Profile(models.Model):
 
 
 class ProfileExpertise(models.Model):
+    """Explicit join model between profiles and expertise terms."""
+
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     term = models.ForeignKey(ExpertiseTerm, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -217,6 +237,8 @@ class ProfileExpertise(models.Model):
 
 
 class AuditEvent(models.Model):
+    """Append-only audit trail for moderation and account actions."""
+
     class Action(models.TextChoices):
         USER_APPROVED = "user_approved", "User approved"
         USER_DEACTIVATED = "user_deactivated", "User deactivated"

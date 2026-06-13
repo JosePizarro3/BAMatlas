@@ -1,3 +1,5 @@
+"""Views for local account registration, verification, and account status."""
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -10,12 +12,14 @@ from django.utils.http import urlsafe_base64_decode
 from django.views.generic import FormView, TemplateView
 
 from .forms import RegistrationForm, ResendVerificationEmailForm
-from .services import send_verification_email
+from .services import send_verification_email, send_verification_email_if_pending
 
 User = get_user_model()
 
 
 class RegisterView(FormView):
+    """Create an account and trigger the first verification email."""
+
     form_class = RegistrationForm
     template_name = "accounts/register.html"
     success_url = reverse_lazy("accounts:registration-pending")
@@ -28,6 +32,8 @@ class RegisterView(FormView):
 
 
 class RegistrationPendingView(FormView):
+    """Explain the verification step and allow resending the email."""
+
     form_class = ResendVerificationEmailForm
     template_name = "accounts/registration_pending.html"
     success_url = reverse_lazy("accounts:registration-pending")
@@ -38,14 +44,7 @@ class RegistrationPendingView(FormView):
         return initial
 
     def form_valid(self, form):
-        email = form.cleaned_data["email"]
-        user = User.objects.filter(
-            email__iexact=email,
-            is_email_verified=False,
-            is_active=True,
-        ).first()
-        if user is not None:
-            send_verification_email(user, self.request)
+        send_verification_email_if_pending(form.cleaned_data["email"], self.request)
         messages.success(
             self.request,
             (
@@ -57,18 +56,13 @@ class RegistrationPendingView(FormView):
 
 
 class ResendVerificationEmailView(FormView):
+    """Process dedicated resend-verification submissions."""
+
     form_class = ResendVerificationEmailForm
     success_url = reverse_lazy("accounts:registration-pending")
 
     def form_valid(self, form):
-        email = form.cleaned_data["email"]
-        user = User.objects.filter(
-            email__iexact=email,
-            is_email_verified=False,
-            is_active=True,
-        ).first()
-        if user is not None:
-            send_verification_email(user, self.request)
+        send_verification_email_if_pending(form.cleaned_data["email"], self.request)
         messages.success(
             self.request,
             (
@@ -80,6 +74,8 @@ class ResendVerificationEmailView(FormView):
 
 
 class VerifyEmailView(TemplateView):
+    """Validate the signed email-verification link and expose the result state."""
+
     template_name = "accounts/verify_result.html"
 
     def get_context_data(self, **kwargs):
@@ -103,6 +99,8 @@ class VerifyEmailView(TemplateView):
         return context
 
     def _get_user(self):
+        """Decode the URL-safe user id from the verification link."""
+
         try:
             uid = force_str(urlsafe_base64_decode(self.kwargs["uidb64"]))
             return User.objects.get(pk=uid)
@@ -111,6 +109,8 @@ class VerifyEmailView(TemplateView):
 
 
 class AccountHomeView(LoginRequiredMixin, TemplateView):
+    """Render the signed-in user's account overview."""
+
     template_name = "accounts/account_home.html"
 
     def get_context_data(self, **kwargs):

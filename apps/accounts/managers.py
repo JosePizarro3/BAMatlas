@@ -1,8 +1,12 @@
+"""Custom user manager helpers for account creation and moderation defaults."""
+
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
+    """Create normal users and superusers with BAMatlas-specific defaults."""
+
     use_in_migrations = True
 
     def _create_user(self, email: str, password: str | None, **extra_fields):

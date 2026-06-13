@@ -18,7 +18,11 @@ from apps.accounts.forms import (
     ResendVerificationEmailForm,
 )
 from apps.accounts.models import User
-from apps.accounts.services import build_email_verification_url, send_verification_email
+from apps.accounts.services import (
+    build_email_verification_url,
+    send_verification_email,
+    send_verification_email_if_pending,
+)
 from apps.accounts.views import VerifyEmailView
 from apps.directory.models import AuditEvent
 
@@ -166,6 +170,26 @@ def test_send_verification_email_renders_templates_and_sends_mail():
         "noreply@bamatlas.local",
         [user.email],
     )
+
+
+def test_send_verification_email_if_pending_only_sends_for_active_unverified_user():
+    pending_user = UserModel.objects.create_user(
+        email="pending-send@bam.de",
+        password=TEST_PASSWORD,
+    )
+    verified_user = UserModel.objects.create_user(
+        email="verified-send@bam.de",
+        password=TEST_PASSWORD,
+    )
+    verified_user.mark_email_verified()
+    request = RequestFactory().get("/")
+
+    with patch("apps.accounts.services.send_verification_email") as send_email_mock:
+        assert send_verification_email_if_pending(pending_user.email, request) is True
+        assert send_verification_email_if_pending(verified_user.email, request) is False
+        assert send_verification_email_if_pending("missing@bam.de", request) is False
+
+    send_email_mock.assert_called_once_with(pending_user, request)
 
 
 def test_create_superuser_sets_verification_and_approval_timestamps():

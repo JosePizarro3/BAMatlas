@@ -1,3 +1,5 @@
+"""URL routes for the public directory and moderation dashboard."""
+
 from django.urls import path
 
 from .views import (

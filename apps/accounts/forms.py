@@ -1,3 +1,5 @@
+"""Forms for registration, login, and email-verification flows."""
+
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -8,6 +10,8 @@ User = get_user_model()
 
 
 class RegistrationForm(UserCreationForm):
+    """Create a local BAMatlas account for a BAM email address."""
+
     class Meta(UserCreationForm.Meta):
         model = User
         fields = ("first_name", "last_name", "email")
@@ -40,6 +44,8 @@ class RegistrationForm(UserCreationForm):
 
 
 class EmailAuthenticationForm(AuthenticationForm):
+    """Authentication form that surfaces moderation-related account states."""
+
     username = forms.EmailField(
         label="Institutional email",
         widget=forms.EmailInput(attrs={"autofocus": True, "autocomplete": "email"}),
@@ -73,6 +79,8 @@ class EmailAuthenticationForm(AuthenticationForm):
 
 
 class ResendVerificationEmailForm(forms.Form):
+    """Collect an institutional email to resend a verification link."""
+
     email = forms.EmailField(
         label="Institutional email",
         widget=forms.EmailInput(attrs={"autocomplete": "email"}),

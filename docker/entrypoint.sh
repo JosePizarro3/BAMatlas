@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+# Keep container startup predictable for BAM IT: apply schema changes and
+# collect static assets before the web process starts serving traffic.
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 
