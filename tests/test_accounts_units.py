@@ -24,6 +24,7 @@ from apps.directory.models import AuditEvent
 
 pytestmark = pytest.mark.django_db
 UserModel = get_user_model()
+TEST_PASSWORD = "HighlySecurePass123!!"  # pragma: allowlist secret
 
 
 def test_registration_form_normalizes_email_for_valid_bam_account():
@@ -32,8 +33,8 @@ def test_registration_form_normalizes_email_for_valid_bam_account():
             "first_name": "Ada",
             "last_name": "Lovelace",
             "email": "Ada@BAM.DE",
-            "password1": "HighlySecurePass123!!",
-            "password2": "HighlySecurePass123!!",
+            "password1": TEST_PASSWORD,
+            "password2": TEST_PASSWORD,
         }
     )
 
@@ -44,15 +45,15 @@ def test_registration_form_normalizes_email_for_valid_bam_account():
 def test_registration_form_rejects_duplicate_email_case_insensitively():
     UserModel.objects.create_user(
         email="existing@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     form = RegistrationForm(
         data={
             "first_name": "Existing",
             "last_name": "User",
             "email": "Existing@Bam.de",
-            "password1": "HighlySecurePass123!!",
-            "password2": "HighlySecurePass123!!",
+            "password1": TEST_PASSWORD,
+            "password2": TEST_PASSWORD,
         }
     )
 
@@ -70,14 +71,14 @@ def test_resend_verification_email_form_lowercases_email():
 def test_email_authentication_form_surfaces_inactive_account_message():
     user = UserModel.objects.create_user(
         email="inactive@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     user.deactivate(save=False)
     user.save(update_fields=["is_active", "deactivated_at", "deactivated_by", "updated_at"])
 
     form = EmailAuthenticationForm(
         request=RequestFactory().post(reverse("accounts:login")),
-        data={"username": "inactive@bam.de", "password": "HighlySecurePass123!!"},
+        data={"username": "inactive@bam.de", "password": TEST_PASSWORD},
     )
 
     assert not form.is_valid()
@@ -89,7 +90,7 @@ def test_email_authentication_form_surfaces_inactive_account_message():
 def test_email_authentication_form_requires_verified_users():
     user = UserModel.objects.create_user(
         email="pending@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     form = EmailAuthenticationForm()
 
@@ -100,7 +101,7 @@ def test_email_authentication_form_requires_verified_users():
 def test_email_authentication_form_requires_admin_approval_by_default():
     user = UserModel.objects.create_user(
         email="unapproved@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     user.mark_email_verified()
     form = EmailAuthenticationForm()
@@ -116,7 +117,7 @@ def test_email_authentication_form_requires_admin_approval_by_default():
 def test_email_authentication_form_allows_verified_user_without_approval_when_disabled():
     user = UserModel.objects.create_user(
         email="verified@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     user.mark_email_verified()
     form = EmailAuthenticationForm()
@@ -127,7 +128,7 @@ def test_email_authentication_form_allows_verified_user_without_approval_when_di
 def test_build_email_verification_url_returns_absolute_verification_link():
     user = UserModel.objects.create_user(
         email="person@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     request = RequestFactory().get("/")
 
@@ -140,7 +141,7 @@ def test_build_email_verification_url_returns_absolute_verification_link():
 def test_send_verification_email_renders_templates_and_sends_mail():
     user = UserModel.objects.create_user(
         email="notify@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     request = RequestFactory().get("/")
 
@@ -173,7 +174,7 @@ def test_create_superuser_sets_verification_and_approval_timestamps():
     with patch("apps.accounts.managers.timezone.now", return_value=now):
         user = UserModel.objects.create_superuser(
             email="admin@bam.de",
-            password="HighlySecurePass123!!",
+            password=TEST_PASSWORD,
         )
 
     assert user.is_staff is True
@@ -188,7 +189,7 @@ def test_create_superuser_rejects_invalid_staff_flag():
     with pytest.raises(ValueError, match="Superuser must have is_staff=True."):
         UserModel.objects.create_superuser(
             email="badstaff@bam.de",
-            password="HighlySecurePass123!!",
+            password=TEST_PASSWORD,
             is_staff=False,
         )
 
@@ -197,7 +198,7 @@ def test_create_superuser_rejects_invalid_superuser_flag():
     with pytest.raises(ValueError, match="Superuser must have is_superuser=True."):
         UserModel.objects.create_superuser(
             email="badsuperuser@bam.de",
-            password="HighlySecurePass123!!",
+            password=TEST_PASSWORD,
             is_superuser=False,
         )
 
@@ -205,7 +206,7 @@ def test_create_superuser_rejects_invalid_superuser_flag():
 def test_mark_email_verified_is_idempotent():
     user = UserModel.objects.create_user(
         email="idempotent-email@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     first_time = timezone.now()
     second_time = first_time + timedelta(days=1)
@@ -221,7 +222,7 @@ def test_mark_email_verified_is_idempotent():
 def test_mark_approved_is_idempotent():
     user = UserModel.objects.create_user(
         email="idempotent-approval@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     first_time = timezone.now()
     second_time = first_time + timedelta(days=1)
@@ -237,11 +238,11 @@ def test_mark_approved_is_idempotent():
 def test_deactivate_and_reactivate_update_user_state():
     moderator = UserModel.objects.create_superuser(
         email="moderator@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     user = UserModel.objects.create_user(
         email="toggle@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
 
     user.deactivate(by_user=moderator, save=False)
@@ -269,7 +270,7 @@ def test_verify_email_view_returns_invalid_state_for_unknown_uid():
 def test_verify_email_view_marks_user_verified_for_valid_token():
     user = UserModel.objects.create_user(
         email="verifyme@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
@@ -289,15 +290,15 @@ def test_user_admin_actions_update_users_and_write_audit_events():
     request = RequestFactory().post("/admin/accounts/user/")
     moderator = UserModel.objects.create_superuser(
         email="admin-action@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     pending_user = UserModel.objects.create_user(
         email="pending-action@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     inactive_user = UserModel.objects.create_user(
         email="inactive-action@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
     )
     inactive_user.deactivate(save=True)
     request.user = moderator

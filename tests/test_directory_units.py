@@ -24,6 +24,7 @@ from apps.directory.templatetags.directory_expertise import (
 
 pytestmark = pytest.mark.django_db
 User = get_user_model()
+TEST_PASSWORD = "HighlySecurePass123!!"  # pragma: allowlist secret
 
 
 def create_profile_user(
@@ -35,7 +36,7 @@ def create_profile_user(
 ):
     user = User.objects.create_user(
         email=email,
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
         first_name="Test",
         last_name="User",
     )
@@ -164,7 +165,7 @@ def test_profile_form_requires_expertise_for_public_profile():
 def test_profile_form_staff_save_auto_publishes_profile():
     user = User.objects.create_superuser(
         email="staff-form@bam.de",
-        password="HighlySecurePass123!!",
+        password=TEST_PASSWORD,
         first_name="Staff",
         last_name="Reviewer",
     )
