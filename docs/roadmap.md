@@ -53,6 +53,8 @@ Includes:
 - safer edit and deletion controls
 - stronger permission boundaries
 - audit-friendly timestamps and status fields
+- staff moderation dashboard
+- user deactivation instead of hard deletion
 
 ## Milestone 5: Deployment and SSO
 

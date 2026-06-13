@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Moderation | BAMatlas{% endblock %}
+
+{% block content %}
+  <section class="hero compact-hero">
+    <p class="eyebrow">Moderation</p>
+    <h1>Review accounts and public directory changes.</h1>
+    <p class="lead compact">
+      This staff-only workspace keeps destructive actions out of the normal user flow and makes moderation decisions traceable.
+    </p>
+  </section>
+
+  <section class="moderation-grid">
+    <article class="panel moderation-panel">
+      <h2>Pending account approvals</h2>
+      {% for user in pending_users %}
+        <form method="post" class="moderation-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="approve-user">
+          <input type="hidden" name="user_id" value="{{ user.id }}">
+          <div>
+            <strong>{{ user.get_full_name|default:user.email }}</strong>
+            <p class="inline-note">{{ user.email }}</p>
+          </div>
+          <input type="text" name="notes" placeholder="Optional approval note">
+          <button type="submit" class="button button-primary">Approve</button>
+        </form>
+      {% empty %}
+        <p class="inline-note">No users are waiting for account approval.</p>
+      {% endfor %}
+    </article>
+
+    <article class="panel moderation-panel">
+      <h2>Profiles awaiting publication</h2>
+      {% for profile in pending_profiles %}
+        <div class="moderation-entry">
+          <div>
+            <strong>{{ profile.full_name }}</strong>
+            <p class="inline-note">{{ profile.user.email }} · {{ profile.organizational_entity }}</p>
+          </div>
+          <div class="tag-row">
+            {% for term in profile.expertise_terms.all %}
+              <span class="chip chip-small">{{ term.name }}</span>
+            {% endfor %}
+          </div>
+          <div class="moderation-actions">
+            <form method="post" class="moderation-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="publish-profile">
+              <input type="hidden" name="profile_id" value="{{ profile.id }}">
+              <input type="text" name="notes" placeholder="Optional publication note">
+              <button type="submit" class="button button-primary">Publish</button>
+            </form>
+            <form method="post" class="moderation-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="request-profile-changes">
+              <input type="hidden" name="profile_id" value="{{ profile.id }}">
+              <input type="text" name="notes" placeholder="Required changes for the user">
+              <button type="submit" class="button button-secondary">Request changes</button>
+            </form>
+          </div>
+        </div>
+      {% empty %}
+        <p class="inline-note">No profiles are waiting for first publication.</p>
+      {% endfor %}
+    </article>
+
+    <article class="panel moderation-panel">
+      <h2>Published profiles with pending updates</h2>
+      {% for profile in profiles_with_pending_updates %}
+        <div class="moderation-entry">
+          <div>
+            <strong>{{ profile.full_name }}</strong>
+            <p class="inline-note">{{ profile.user.email }} · submitted {{ profile.submitted_for_review_at|date:"Y-m-d H:i" }}</p>
+          </div>
+          <div class="moderation-actions">
+            <form method="post" class="moderation-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="publish-profile">
+              <input type="hidden" name="profile_id" value="{{ profile.id }}">
+              <input type="text" name="notes" placeholder="Optional review note">
+              <button type="submit" class="button button-primary">Approve update</button>
+            </form>
+            <form method="post" class="moderation-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="archive-profile">
+              <input type="hidden" name="profile_id" value="{{ profile.id }}">
+              <input type="text" name="notes" placeholder="Reason for archiving">
+              <button type="submit" class="button button-secondary">Archive</button>
+            </form>
+          </div>
+        </div>
+      {% empty %}
+        <p class="inline-note">No published profiles have pending updates.</p>
+      {% endfor %}
+    </article>
+
+    <article class="panel moderation-panel">
+      <h2>Recent audit events</h2>
+      <div class="audit-list">
+        {% for event in recent_events %}
+          <article class="audit-item">
+            <strong>{{ event.get_action_display }}</strong>
+            <p class="inline-note">
+              {% if event.target_user %}{{ event.target_user.email }}{% endif %}
+              {% if event.actor %} · by {{ event.actor.email }}{% endif %}
+              · {{ event.created_at|date:"Y-m-d H:i" }}
+            </p>
+            {% if event.notes %}
+              <p>{{ event.notes }}</p>
+            {% endif %}
+          </article>
+        {% empty %}
+          <p class="inline-note">No audit events recorded yet.</p>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% endblock %}

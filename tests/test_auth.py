@@ -160,3 +160,24 @@ def test_resend_verification_email_is_generic_but_sends_for_pending_users():
     assert response.status_code == 200
     assert len(mail.outbox) == 1
     assert b"fresh verification email has been sent" in response.content
+
+
+def test_deactivated_user_cannot_sign_in():
+    user = User.objects.create_user(
+        email="inactive@bam.de",
+        password="HighlySecurePass123!!",
+        first_name="Inactive",
+        last_name="User",
+    )
+    user.mark_email_verified()
+    user.mark_approved()
+    user.deactivate()
+    client = Client()
+
+    response = client.post(
+        reverse("accounts:login"),
+        {"username": user.email, "password": "HighlySecurePass123!!"},
+    )
+
+    assert response.status_code == 200
+    assert b"This account has been disabled." in response.content

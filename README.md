@@ -37,6 +37,14 @@ The current directory milestone adds:
 - public profile email addresses for direct contact
 - controlled site locations limited to `UE`, `AH`, or `TTS`
 
+The current admin-hardening milestone adds:
+
+- profile moderation states and staff publication review
+- audit events for approvals, deactivations, and directory moderation
+- safer user deactivation instead of hard-delete workflows
+- a staff-only moderation dashboard
+- moderator access currently follows Django's `is_staff` flag
+
 ## Planned Milestones
 
 1. `milestone/01-foundation`: scaffold, settings, custom user model, local setup.
@@ -83,7 +91,8 @@ For local development, email is sent to the console so verification links can be
 4. if admin approval is still required, approve the user through `/admin/`
 5. sign in through the public login page
 6. complete the profile at `/directory/profile/edit/`
-7. explore the public directory at `/directory/`
+7. if needed, publish or review content through `/directory/moderation/` as staff
+8. explore the public directory at `/directory/`
 
 ## Architecture Notes
 

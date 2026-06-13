@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ExpertiseTerm, Profile, ProfileExpertise
+from .models import AuditEvent, ExpertiseTerm, Profile, ProfileExpertise
 
 
 class ProfileExpertiseInline(admin.TabularInline):
@@ -19,10 +19,27 @@ class ProfileAdmin(admin.ModelAdmin):
         "job_title",
         "location",
         "is_public",
+        "moderation_status",
+        "has_pending_updates",
         "updated_at",
     )
-    list_filter = ("is_public", "location", "organizational_entity")
-    readonly_fields = ("public_id", "created_at", "updated_at")
+    list_filter = (
+        "is_public",
+        "moderation_status",
+        "has_pending_updates",
+        "location",
+        "organizational_entity",
+    )
+    readonly_fields = (
+        "public_id",
+        "created_at",
+        "updated_at",
+        "submitted_for_review_at",
+        "reviewed_at",
+        "reviewed_by",
+        "published_at",
+        "archived_at",
+    )
     search_fields = (
         "user__first_name",
         "user__last_name",
@@ -31,6 +48,88 @@ class ProfileAdmin(admin.ModelAdmin):
         "job_title",
         "research_summary",
     )
+    actions = ("publish_profiles", "request_profile_changes", "archive_profiles")
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "user",
+                    "public_id",
+                    "organizational_entity",
+                    "job_title",
+                    "location",
+                    "research_summary",
+                    "is_public",
+                )
+            },
+        ),
+        (
+            "Moderation",
+            {
+                "fields": (
+                    "moderation_status",
+                    "has_pending_updates",
+                    "submitted_for_review_at",
+                    "reviewed_at",
+                    "reviewed_by",
+                    "published_at",
+                    "archived_at",
+                    "moderation_notes",
+                )
+            },
+        ),
+        ("Important dates", {"fields": ("created_at", "updated_at")}),
+    )
+
+    @admin.action(description="Publish selected profiles")
+    def publish_profiles(self, request, queryset):
+        count = 0
+        for profile in queryset.iterator():
+            profile.publish(reviewed_by=request.user, notes=profile.moderation_notes)
+            AuditEvent.objects.create(
+                actor=request.user,
+                target_user=profile.user,
+                profile=profile,
+                action=AuditEvent.Action.PROFILE_PUBLISHED,
+                notes=profile.moderation_notes,
+            )
+            count += 1
+        self.message_user(request, f"Published {count} profile(s).")
+
+    @admin.action(description="Request changes for selected profiles")
+    def request_profile_changes(self, request, queryset):
+        count = 0
+        for profile in queryset.iterator():
+            profile.request_changes(reviewed_by=request.user, notes=profile.moderation_notes)
+            AuditEvent.objects.create(
+                actor=request.user,
+                target_user=profile.user,
+                profile=profile,
+                action=AuditEvent.Action.PROFILE_CHANGES_REQUESTED,
+                notes=profile.moderation_notes,
+            )
+            count += 1
+        self.message_user(request, f"Marked {count} profile(s) for changes.")
+
+    @admin.action(description="Archive selected profiles")
+    def archive_profiles(self, request, queryset):
+        count = 0
+        for profile in queryset.iterator():
+            profile.archive(reviewed_by=request.user, notes=profile.moderation_notes)
+            AuditEvent.objects.create(
+                actor=request.user,
+                target_user=profile.user,
+                profile=profile,
+                action=AuditEvent.Action.PROFILE_ARCHIVED,
+                notes=profile.moderation_notes,
+            )
+            count += 1
+        self.message_user(request, f"Archived {count} profile(s).")
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(ExpertiseTerm)
@@ -40,9 +139,33 @@ class ExpertiseTermAdmin(admin.ModelAdmin):
     readonly_fields = ("normalized_name", "created_at")
     search_fields = ("name", "normalized_name")
 
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(ProfileExpertise)
 class ProfileExpertiseAdmin(admin.ModelAdmin):
     autocomplete_fields = ("profile", "term")
     list_display = ("profile", "term", "created_at")
     search_fields = ("profile__user__first_name", "profile__user__last_name", "term__name")
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AuditEvent)
+class AuditEventAdmin(admin.ModelAdmin):
+    autocomplete_fields = ("actor", "target_user", "profile")
+    list_display = ("action", "target_user", "profile", "actor", "created_at")
+    list_filter = ("action",)
+    readonly_fields = ("actor", "target_user", "profile", "action", "notes", "created_at")
+    search_fields = ("target_user__email", "profile__user__email", "notes")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

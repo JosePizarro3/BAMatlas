@@ -3,6 +3,8 @@ import re
 from django.conf import settings
 from django.db.models import Count, Prefetch, Q
 
+FEATURED_EXPERTISE_LIMIT = 12
+
 
 def clean_expertise_display_name(name: str) -> str:
     return " ".join(name.strip().split())
@@ -52,6 +54,7 @@ def get_public_profile_queryset():
         Prefetch("expertise_terms")
     ).filter(
         is_public=True,
+        moderation_status=Profile.ModerationStatus.PUBLISHED,
         user__is_active=True,
         user__is_email_verified=True,
     )
@@ -86,11 +89,12 @@ def filter_public_profiles(*, query: str = "", expertise: str = "", organization
     return queryset.distinct()
 
 
-def get_featured_expertise_terms(*, limit: int = 8):
+def get_featured_expertise_terms(*, limit: int = FEATURED_EXPERTISE_LIMIT):
     from .models import ExpertiseTerm
 
     public_filter = Q(
         profiles__is_public=True,
+        profiles__moderation_status="published",
         profiles__user__is_active=True,
         profiles__user__is_email_verified=True,
     )
@@ -108,3 +112,15 @@ def get_featured_expertise_terms(*, limit: int = 8):
 
 def get_public_profile_count() -> int:
     return get_public_profile_queryset().count()
+
+
+def record_audit_event(*, actor=None, target_user=None, profile=None, action, notes=""):
+    from .models import AuditEvent
+
+    return AuditEvent.objects.create(
+        actor=actor,
+        target_user=target_user,
+        profile=profile,
+        action=action,
+        notes=notes,
+    )

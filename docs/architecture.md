@@ -36,10 +36,22 @@ The directory layer uses:
 - `Profile`: one public-facing record per user
 - `ExpertiseTerm`: reusable expertise vocabulary entries
 - `ProfileExpertise`: explicit join table for profile-term relationships
+ - `AuditEvent`: append-only operational history for approvals and moderation decisions
 
 Public profile data now includes the institutional email address, because discoverability is only useful if colleagues can contact each other immediately from the directory.
 
 `Profile.location` is intentionally constrained to the BAM site codes `UE`, `AH`, and `TTS` to avoid drifting free-text variants.
+
+## Hardening Strategy
+
+Milestone 4 introduces:
+
+- staff review before first public profile publication
+- pending-update tracking for edits to already-published profiles
+- account deactivation instead of destructive deletion
+- immutable-style audit records for user approvals and directory moderation
+
+This keeps public data manageable without making the user flow heavy-handed.
 
 Users can select existing expertise terms or type a new one. New terms are created immediately, but stored in a structured table so autocomplete and later governance remain possible.
 
